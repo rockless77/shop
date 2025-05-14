@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Your Cart</h2>
+
+  {% if line_items %}
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for li in line_items %}
+          <tr>
+            <td>{{ li.product.name }}</td>
+            <td>{{ li.quantity }}</td>
+            <td>${{ '%.2f'|format(li.product.price) }}</td>
+            <td>${{ '%.2f'|format(li.subtotal) }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" style="text-align: right;"><strong>Total:</strong></td>
+          <td><strong>${{ '%.2f'|format(grand_total) }}</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <p>
+      <a href="{{ url_for('checkout') }}">
+        <button type="button">Proceed to Checkout</button>
+      </a>
+    </p>
+  {% else %}
+    <p>Your cart is empty.</p>
+  {% endif %}
+{% endblock %}

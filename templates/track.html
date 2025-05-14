@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Track Your Order</h2>
+  <form method="POST" action="{{ url_for('track') }}">
+    <input type="text" name="tracking_number" placeholder="Enter tracking number" required>
+    <button type="submit">Track</button>
+  </form>
+
+  {% if order %}
+    <hr>
+    <h3>Order #{{ order.id }} — Status: {{ order.status }}</h3>
+    <p><strong>Placed:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    <p><strong>Ship to:</strong> {{ order.shipping_name }}, {{ order.shipping_addr }}</p>
+    <p><strong>Payment:</strong> {{ order.payment_method }}</p>
+    <p><strong>Total:</strong> ${{ order.total_price }}</p>
+    <p><strong>Tracking #:</strong> {{ order.tracking_number }}</p>
+
+    <h4>Items:</h4>
+    <ul>
+      {% for item in order.items %}
+        <li>
+          {{ item.quantity }} x {{ item.product.name }} — ${{ '%.2f'|format(item.product.price) }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

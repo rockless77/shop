@@ -1,0 +1,28 @@
+<!-- checkout.html -->
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Checkout</h2>
+
+  <!-- Show cart summary if you like -->
+  <ul>
+    {% for p in products %}
+      <li>{{ p.name }} – ${{ p.price }}</li>
+    {% endfor %}
+  </ul>
+
+  <!-- This form POSTS back to /checkout -->
+  <form method="POST" action="{{ url_for('checkout') }}">
+    <h3>Shipping Info</h3>
+    <input name="shipping_name" placeholder="Full Name" required><br>
+    <textarea name="shipping_addr" placeholder="Street, City, ZIP" required></textarea><br>
+
+    <h3>Payment Method</h3>
+    <select name="payment_method" required>
+      <option>Credit Card</option>
+      <option>PayPal</option>
+      <option>Bank Transfer</option>
+    </select><br><br>
+
+    <button type="submit">Place Order</button>
+  </form>
+{% endblock %}
