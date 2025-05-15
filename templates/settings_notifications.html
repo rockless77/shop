@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Settings Sidebar -->
+        <div class="col-md-3 mb-4">
+            <div class="list-group">
+                <a href="{{ url_for('profile_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person-badge me-2"></i> Profile Settings
+                </a>
+                <a href="{{ url_for('notification_settings') }}" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-bell me-2"></i> Notification Settings
+                </a>
+                <a href="{{ url_for('privacy_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield-lock me-2"></i> Privacy Settings
+                </a>
+                <a href="{{ url_for('address_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-geo-alt me-2"></i> Address Settings
+                </a>
+                <a href="{{ url_for('payment_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-credit-card me-2"></i> Payment Settings
+                </a>
+                <a href="{{ url_for('security_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield me-2"></i> Security Settings
+                </a>
+                <a href="{{ url_for('settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-gear me-2"></i> All Settings
+                </a>
+                <a href="{{ url_for('profile') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-arrow-left me-2"></i> Back to Profile
+                </a>
+            </div>
+        </div>
+        
+        <!-- Notification Settings Form -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Notification Settings</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Control which notifications you receive and how we contact you.</p>
+                    
+                    <form method="POST" action="{{ url_for('notification_settings') }}">
+                        <!-- Email Notifications -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Email Notifications</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="email_notifications" name="email_notifications" {% if user.email_notifications %}checked{% endif %}>
+                                    <label class="form-check-label" for="email_notifications">
+                                        <strong>Enable Email Notifications</strong>
+                                    </label>
+                                    <div class="text-muted small">Master toggle for all email notifications</div>
+                                </div>
+                                
+                                <hr>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="bid_notifications" name="bid_notifications" {% if user.bid_notifications %}checked{% endif %}>
+                                    <label class="form-check-label" for="bid_notifications">
+                                        Bid Activity
+                                    </label>
+                                    <div class="text-muted small">Receive notifications when someone outbids you or when you place a successful bid</div>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="auction_end_notifications" name="auction_end_notifications" {% if user.auction_end_notifications %}checked{% endif %}>
+                                    <label class="form-check-label" for="auction_end_notifications">
+                                        Auction End Alerts
+                                    </label>
+                                    <div class="text-muted small">Receive notifications when auctions you're participating in are ending soon</div>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="order_update_notifications" name="order_update_notifications" {% if user.order_update_notifications %}checked{% endif %}>
+                                    <label class="form-check-label" for="order_update_notifications">
+                                        Order Updates
+                                    </label>
+                                    <div class="text-muted small">Receive notifications about changes to your orders, shipping updates, and delivery confirmations</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Marketing Preferences -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Marketing Preferences</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="marketing_emails" name="marketing_emails" {% if user.marketing_emails %}checked{% endif %}>
+                                    <label class="form-check-label" for="marketing_emails">
+                                        Marketing Emails
+                                    </label>
+                                    <div class="text-muted small">Receive emails about special promotions, featured auctions, and platform updates</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Push Notification Settings (future feature) -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Push Notifications (Coming Soon)</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-0">Push notifications will be available in a future update. You'll be able to receive instant notifications on your device when important events happen.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Order #{{ order.id }}</h1>
+        <a href="{{ url_for('order_history') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Orders
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Order Information -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Order Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Date:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge {% if order.status == 'Delivered' %}bg-success{% elif order.status == 'Processing' %}bg-warning text-dark{% elif order.status == 'Shipped' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                            {{ order.status }}
+                        </span>
+                    </p>
+                    <p><strong>Total Amount:</strong> ${{ "%.2f"|format(order.total_price) }}</p>
+                    <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shipping Information -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Shipping Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Recipient:</strong> {{ order.shipping_name }}</p>
+                    <p><strong>Address:</strong> {{ order.shipping_addr }}</p>
+                    {% if order.tracking_number %}
+                        <div class="alert alert-success">
+                            <p class="mb-0"><strong>Tracking Number:</strong> {{ order.tracking_number }}</p>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <p class="mb-0">Tracking number will be available once your order ships.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Delivery Status -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Delivery Status</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        <li class="list-group-item {% if order.status != 'Cancelled' %}list-group-item-success{% endif %}">
+                            <i class="bi bi-check-circle-fill me-2"></i> Order Placed
+                            <small class="float-end">{{ order.created_at.strftime('%Y-%m-%d') }}</small>
+                        </li>
+                        <li class="list-group-item {% if order.status in ['Processing', 'Shipped', 'Delivered'] %}list-group-item-success{% endif %}">
+                            <i class="bi {% if order.status in ['Processing', 'Shipped', 'Delivered'] %}bi-check-circle-fill{% else %}bi-circle{% endif %} me-2"></i> Processing
+                        </li>
+                        <li class="list-group-item {% if order.status in ['Shipped', 'Delivered'] %}list-group-item-success{% endif %}">
+                            <i class="bi {% if order.status in ['Shipped', 'Delivered'] %}bi-check-circle-fill{% else %}bi-circle{% endif %} me-2"></i> Shipped
+                            {% if order.tracking_number %}
+                                <small class="float-end">Tracking available</small>
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item {% if order.status == 'Delivered' %}list-group-item-success{% endif %}">
+                            <i class="bi {% if order.status == 'Delivered' %}bi-check-circle-fill{% else %}bi-circle{% endif %} me-2"></i> Delivered
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Order Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item, product in order_items %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ url_for('view_auction', product_id=product.id) }}">
+                                                {{ product.name }}
+                                            </a>
+                                        </td>
+                                        <td>${{ "%.2f"|format(product.price) }}</td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>${{ "%.2f"|format(product.price * item.quantity) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="3" class="text-end">Total:</th>
+                                    <th>${{ "%.2f"|format(order.total_price) }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

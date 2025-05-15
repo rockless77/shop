@@ -1,25 +1,52 @@
 {% extends 'base.html' %}
+
 {% block content %}
-  <h2>My Orders</h2>
-  {% if orders %}
-    <ul>
-      {% for order in orders %}
-        <li>
-          <strong>Order #{{ order.id }}</strong> —
-          Status: {{ order.status }} —
-          Placed: {{ order.created_at.strftime('%Y-%m-%d %H:%M') }} —
-          Total: ${{ order.total_price }}
-          {# Track button👇 #}
-          <a 
-            href="{{ url_for('track', tracking_number=order.tracking_number) }}" 
-            class="button small"
-          >
-            Track
-          </a>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>You have no orders yet.</p>
-  {% endif %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>My Orders</h1>
+        <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-person"></i> Back to Profile
+        </a>
+    </div>
+
+    {% if orders %}
+        <div class="list-group">
+            {% for order in orders %}
+                <div class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">Order #{{ order.id }}</h5>
+                        <small>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+                    <p class="mb-1">
+                        <span class="badge {% if order.status == 'Delivered' %}bg-success{% elif order.status == 'Processing' %}bg-warning text-dark{% elif order.status == 'Shipped' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                            {{ order.status }}
+                        </span>
+                        <span class="ms-2">Total: ${{ "%.2f"|format(order.total_price) }}</span>
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <small class="text-muted">
+                            {% if order.tracking_number %}
+                                Tracking #: <strong>{{ order.tracking_number }}</strong>
+                            {% else %}
+                                <em>Tracking number will be available once shipped</em>
+                            {% endif %}
+                        </small>
+                        <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-box"></i> Track Order
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i> You have no orders yet.
+        </div>
+        <div class="text-center mt-3">
+            <a href="{{ url_for('list_auctions') }}" class="btn btn-primary">
+                <i class="bi bi-bag"></i> Browse Auctions
+            </a>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

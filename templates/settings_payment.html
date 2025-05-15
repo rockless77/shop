@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Settings Sidebar -->
+        <div class="col-md-3 mb-4">
+            <div class="list-group">
+                <a href="{{ url_for('profile_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person-badge me-2"></i> Profile Settings
+                </a>
+                <a href="{{ url_for('notification_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-bell me-2"></i> Notification Settings
+                </a>
+                <a href="{{ url_for('privacy_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield-lock me-2"></i> Privacy Settings
+                </a>
+                <a href="{{ url_for('address_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-geo-alt me-2"></i> Address Settings
+                </a>
+                <a href="{{ url_for('payment_settings') }}" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-credit-card me-2"></i> Payment Settings
+                </a>
+                <a href="{{ url_for('security_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield me-2"></i> Security Settings
+                </a>
+                <a href="{{ url_for('settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-gear me-2"></i> All Settings
+                </a>
+                <a href="{{ url_for('profile') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-arrow-left me-2"></i> Back to Profile
+                </a>
+            </div>
+        </div>
+        
+        <!-- Payment Settings Form -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Payment Settings</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Manage your payment methods and currency preferences.</p>
+                    
+                    <form method="POST" action="{{ url_for('payment_settings') }}">
+                        <!-- Default Payment Method -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Default Payment Method</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">Select your preferred payment method for auctions and purchases.</p>
+                                
+                                <div class="mb-3">
+                                    <label for="payment_method" class="form-label">Payment Method</label>
+                                    <select class="form-select" id="payment_method" name="payment_method">
+                                        <option value="" {% if not user.default_payment_method %}selected{% endif %}>-- Select a payment method --</option>
+                                        <option value="credit_card" {% if user.default_payment_method == 'credit_card' %}selected{% endif %}>Credit Card</option>
+                                        <option value="paypal" {% if user.default_payment_method == 'paypal' %}selected{% endif %}>PayPal</option>
+                                        <option value="bank_transfer" {% if user.default_payment_method == 'bank_transfer' %}selected{% endif %}>Bank Transfer</option>
+                                        <option value="crypto" {% if user.default_payment_method == 'crypto' %}selected{% endif %}>Cryptocurrency</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i> Saved payment methods will be available in a future update.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Currency Settings -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Currency Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">Set your preferred currency for transactions and display.</p>
+                                
+                                <div class="mb-3">
+                                    <label for="currency" class="form-label">Preferred Currency</label>
+                                    <select class="form-select" id="currency" name="currency">
+                                        <option value="USD" {% if user.default_currency == 'USD' %}selected{% endif %}>US Dollar (USD)</option>
+                                        <option value="EUR" {% if user.default_currency == 'EUR' %}selected{% endif %}>Euro (EUR)</option>
+                                        <option value="GBP" {% if user.default_currency == 'GBP' %}selected{% endif %}>British Pound (GBP)</option>
+                                        <option value="CAD" {% if user.default_currency == 'CAD' %}selected{% endif %}>Canadian Dollar (CAD)</option>
+                                        <option value="AUD" {% if user.default_currency == 'AUD' %}selected{% endif %}>Australian Dollar (AUD)</option>
+                                        <option value="JPY" {% if user.default_currency == 'JPY' %}selected{% endif %}>Japanese Yen (JPY)</option>
+                                        <option value="CNY" {% if user.default_currency == 'CNY' %}selected{% endif %}>Chinese Yuan (CNY)</option>
+                                    </select>
+                                    <div class="form-text">This setting affects how prices are displayed to you. All transactions are processed in USD.</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Payment Information Storage -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Payment Information Storage</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i> Saved payment methods will be available in a future update.
+                                </div>
+                                
+                                <div class="d-grid gap-2 mb-3">
+                                    <button type="button" class="btn btn-outline-secondary" disabled>
+                                        <i class="bi bi-plus-circle me-2"></i> Add Credit/Debit Card
+                                    </button>
+                                </div>
+                                
+                                <div class="d-grid gap-2 mb-3">
+                                    <button type="button" class="btn btn-outline-secondary" disabled>
+                                        <i class="bi bi-plus-circle me-2"></i> Connect PayPal Account
+                                    </button>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-outline-secondary" disabled>
+                                        <i class="bi bi-plus-circle me-2"></i> Add Bank Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Billing History -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Billing History</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">View your billing history and transaction records.</p>
+                                
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i> You don't have any billing history yet. Your transaction records will appear here once you make a purchase.
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <a href="{{ url_for('order_history') }}" class="btn btn-outline-primary">
+                                        <i class="bi bi-box me-2"></i> View Order History
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

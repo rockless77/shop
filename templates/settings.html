@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Settings Sidebar -->
+        <div class="col-md-3 mb-4">
+            <div class="list-group">
+                <a href="{{ url_for('profile_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person-badge me-2"></i> Profile Settings
+                </a>
+                <a href="{{ url_for('notification_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-bell me-2"></i> Notification Settings
+                </a>
+                <a href="{{ url_for('privacy_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield-lock me-2"></i> Privacy Settings
+                </a>
+                <a href="{{ url_for('address_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-geo-alt me-2"></i> Address Settings
+                </a>
+                <a href="{{ url_for('payment_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-credit-card me-2"></i> Payment Settings
+                </a>
+                <a href="{{ url_for('security_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield me-2"></i> Security Settings
+                </a>
+                <a href="{{ url_for('profile') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-arrow-left me-2"></i> Back to Profile
+                </a>
+            </div>
+        </div>
+        
+        <!-- Settings Dashboard -->
+        <div class="col-md-9">
+            <h1 class="mb-4">Account Settings</h1>
+            
+            <div class="row">
+                <!-- Profile Settings Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-person-badge me-2"></i> Profile Settings</h5>
+                            <p class="card-text">Update your personal information, profile picture, and account preferences.</p>
+                            <a href="{{ url_for('profile_settings') }}" class="btn btn-outline-primary">Manage Profile</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notification Settings Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-bell me-2"></i> Notification Settings</h5>
+                            <p class="card-text">Control which notifications you receive and how you receive them.</p>
+                            <a href="{{ url_for('notification_settings') }}" class="btn btn-outline-primary">Manage Notifications</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Privacy Settings Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-shield-lock me-2"></i> Privacy Settings</h5>
+                            <p class="card-text">Control what information is visible to other users on the platform.</p>
+                            <a href="{{ url_for('privacy_settings') }}" class="btn btn-outline-primary">Manage Privacy</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Address Settings Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-geo-alt me-2"></i> Address Settings</h5>
+                            <p class="card-text">Manage your default shipping address for faster checkout.</p>
+                            <a href="{{ url_for('address_settings') }}" class="btn btn-outline-primary">Manage Address</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payment Settings Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-credit-card me-2"></i> Payment Settings</h5>
+                            <p class="card-text">Manage your payment methods and currency preferences.</p>
+                            <a href="{{ url_for('payment_settings') }}" class="btn btn-outline-primary">Manage Payments</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Security Settings Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-shield me-2"></i> Security Settings</h5>
+                            <p class="card-text">Change your password, enable two-factor authentication, and manage your account security.</p>
+                            <a href="{{ url_for('security_settings') }}" class="btn btn-outline-primary">Manage Security</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Account Summary -->
+            <div class="card mt-2">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Account Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Username:</strong> {{ user.username }}</p>
+                            <p><strong>Email:</strong> {{ user.email }}</p>
+                            <p><strong>Member Since:</strong> {{ user.account_created.strftime('%Y-%m-%d') }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Last Login:</strong> {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}</p>
+                            <p><strong>Last Password Change:</strong> {{ user.last_password_change.strftime('%Y-%m-%d') }}</p>
+                            <p><strong>Two-Factor Auth:</strong> {{ 'Enabled' if user.two_factor_enabled else 'Disabled' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

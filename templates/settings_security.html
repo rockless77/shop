@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Settings Sidebar -->
+        <div class="col-md-3 mb-4">
+            <div class="list-group">
+                <a href="{{ url_for('profile_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person-badge me-2"></i> Profile Settings
+                </a>
+                <a href="{{ url_for('notification_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-bell me-2"></i> Notification Settings
+                </a>
+                <a href="{{ url_for('privacy_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield-lock me-2"></i> Privacy Settings
+                </a>
+                <a href="{{ url_for('address_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-geo-alt me-2"></i> Address Settings
+                </a>
+                <a href="{{ url_for('payment_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-credit-card me-2"></i> Payment Settings
+                </a>
+                <a href="{{ url_for('security_settings') }}" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-shield me-2"></i> Security Settings
+                </a>
+                <a href="{{ url_for('settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-gear me-2"></i> All Settings
+                </a>
+                <a href="{{ url_for('profile') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-arrow-left me-2"></i> Back to Profile
+                </a>
+            </div>
+        </div>
+        
+        <!-- Security Settings Form -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Security Settings</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Manage your account security and login credentials.</p>
+                    
+                    <form method="POST" action="{{ url_for('security_settings') }}">
+                        <!-- Password Change Section -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Change Password</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">It's recommended to change your password periodically and use a strong, unique password.</p>
+                                
+                                <div class="mb-3">
+                                    <label for="current_password" class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" id="current_password" name="current_password">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password">
+                                    <div class="form-text">
+                                        Password must be at least 8 characters and include a mix of letters, numbers, and special characters.
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                                </div>
+                                
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                                    <button type="submit" name="update_password" class="btn btn-primary">
+                                        <i class="bi bi-lock me-1"></i> Update Password
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Two-Factor Authentication -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Two-Factor Authentication</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">Add an extra layer of security to your account by enabling two-factor authentication.</p>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="two_factor_enabled" name="two_factor_enabled" {% if user.two_factor_enabled %}checked{% endif %}>
+                                    <label class="form-check-label" for="two_factor_enabled">
+                                        Enable Two-Factor Authentication
+                                    </label>
+                                    <div class="text-muted small">When enabled, you'll need to provide a verification code sent to your email when logging in from a new device</div>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i> Advanced 2FA options like authenticator apps will be available in a future update.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Login History -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Login History</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">Review recent login activity on your account.</p>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Date/Time</th>
+                                                <th>Device</th>
+                                                <th>Location</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') }}</td>
+                                                <td>Current device</td>
+                                                <td>--</td>
+                                                <td><span class="badge bg-success">Success</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="alert alert-info mt-3">
+                                    <i class="bi bi-info-circle me-2"></i> Detailed login history will be available in a future update.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Account Recovery -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Account Recovery</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">Set up recovery options in case you lose access to your account.</p>
+                                
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i> Account recovery options will be available in a future update.
+                                </div>
+                                
+                                <div class="d-grid gap-2 mb-3">
+                                    <button type="button" class="btn btn-outline-secondary" disabled>
+                                        <i class="bi bi-envelope me-2"></i> Set Recovery Email
+                                    </button>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-outline-secondary" disabled>
+                                        <i class="bi bi-phone me-2"></i> Set Recovery Phone Number
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

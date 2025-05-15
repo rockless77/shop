@@ -1,19 +1,53 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Your Wishlist</h2>
+<div class="container py-4">
+    <h2 class="mb-4">Your Watchlist</h2>
 
-{% if products %}
-    <ul>
-    {% for product in products %}
-        <li>
-            <strong>{{ product.name }}</strong><br>
-            {{ product.description }}<br>
-            ${{ product.price }}<br>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>Your wishlist is empty.</p>
-{% endif %}
-
+    {% if products %}
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for product in products %}
+            <div class="col">
+                <div class="card h-100">
+                    {% set primary_image = product.images|selectattr('is_primary', 'eq', true)|first %}
+                    {% if primary_image %}
+                        <img src="{{ url_for('uploaded_file', filename=primary_image.filename) }}" 
+                             class="card-img-top" 
+                             alt="{{ product.name }}" 
+                             style="object-fit: cover; height: 200px;">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='placeholder-product.png') }}" 
+                             class="card-img-top" 
+                             alt="{{ product.name }}" 
+                             style="object-fit: cover; height: 200px;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text text-muted">{{ product.description|truncate(100) }}</p>
+                        {% if product.is_auction %}
+                            <p class="card-text">
+                                Current Bid: ${{ "%.2f"|format(product.current_bid) }}
+                                <br>
+                                <small class="text-muted">Ends: {{ product.auction_end.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </p>
+                            <a href="{{ url_for('view_auction', product_id=product.id) }}" class="btn btn-primary btn-sm">View Auction</a>
+                        {% else %}
+                            <p class="card-text">${{ "%.2f"|format(product.price) }}</p>
+                            <a href="{{ url_for('product', product_id=product.id) }}" class="btn btn-primary btn-sm">View Item</a>
+                        {% endif %}
+                        <form method="POST" action="{{ url_for('add_to_wishlist', product_id=product.id) }}" class="mt-2">
+                            <button type="submit" class="btn btn-danger btn-sm w-100">
+                                <i class="bi bi-heart-fill"></i> Remove from Watchlist
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Your watchlist is empty. Browse <a href="{{ url_for('list_auctions') }}">auctions</a> to add items to your watchlist.
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

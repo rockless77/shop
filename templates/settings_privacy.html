@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Settings Sidebar -->
+        <div class="col-md-3 mb-4">
+            <div class="list-group">
+                <a href="{{ url_for('profile_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person-badge me-2"></i> Profile Settings
+                </a>
+                <a href="{{ url_for('notification_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-bell me-2"></i> Notification Settings
+                </a>
+                <a href="{{ url_for('privacy_settings') }}" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-shield-lock me-2"></i> Privacy Settings
+                </a>
+                <a href="{{ url_for('address_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-geo-alt me-2"></i> Address Settings
+                </a>
+                <a href="{{ url_for('payment_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-credit-card me-2"></i> Payment Settings
+                </a>
+                <a href="{{ url_for('security_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield me-2"></i> Security Settings
+                </a>
+                <a href="{{ url_for('settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-gear me-2"></i> All Settings
+                </a>
+                <a href="{{ url_for('profile') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-arrow-left me-2"></i> Back to Profile
+                </a>
+            </div>
+        </div>
+        
+        <!-- Privacy Settings Form -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Privacy Settings</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Control what information is visible to other users on the platform.</p>
+                    
+                    <form method="POST" action="{{ url_for('privacy_settings') }}">
+                        <!-- Profile Visibility -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Profile Information Visibility</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">These settings control what personal information other users can see when they view your profile or interact with you in auctions.</p>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="show_full_name" name="show_full_name" {% if user.show_full_name %}checked{% endif %}>
+                                    <label class="form-check-label" for="show_full_name">
+                                        Show Full Name
+                                    </label>
+                                    <div class="text-muted small">If enabled, other users will see your full name instead of just your username</div>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="show_email" name="show_email" {% if user.show_email %}checked{% endif %}>
+                                    <label class="form-check-label" for="show_email">
+                                        Show Email Address
+                                    </label>
+                                    <div class="text-muted small">If enabled, your email address will be visible to other users</div>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="show_phone" name="show_phone" {% if user.show_phone %}checked{% endif %}>
+                                    <label class="form-check-label" for="show_phone">
+                                        Show Phone Number
+                                    </label>
+                                    <div class="text-muted small">If enabled, your phone number will be visible to other users</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Activity Privacy -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Activity Privacy</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i> These settings will be available in a future update.
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3 disabled">
+                                    <input class="form-check-input" type="checkbox" id="show_bid_activity" disabled>
+                                    <label class="form-check-label" for="show_bid_activity">
+                                        Show My Bid Activity
+                                    </label>
+                                    <div class="text-muted small">If enabled, other users can see which auctions you've bid on</div>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3 disabled">
+                                    <input class="form-check-input" type="checkbox" id="show_won_auctions" disabled>
+                                    <label class="form-check-label" for="show_won_auctions">
+                                        Show Auctions I've Won
+                                    </label>
+                                    <div class="text-muted small">If enabled, other users can see which auctions you've won</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Data Privacy Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Data Privacy</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>We take your privacy seriously. Here are some options for managing your data:</p>
+                                
+                                <div class="d-grid gap-2 mb-3">
+                                    <button type="button" class="btn btn-outline-secondary" disabled>
+                                        <i class="bi bi-download me-2"></i> Download My Data
+                                    </button>
+                                    <small class="text-muted">Download a copy of all your personal data (Coming soon)</small>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-outline-danger" disabled>
+                                        <i class="bi bi-trash me-2"></i> Delete My Account
+                                    </button>
+                                    <small class="text-muted">Permanently delete your account and all associated data (Coming soon)</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

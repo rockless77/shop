@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="h4 mb-0">Create New Auction</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Item Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="form-text">Be descriptive and specific about what you're selling.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                            <div class="form-text">Include details about condition, features, and any flaws.</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="start_price" class="form-label">Starting Price ($)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="start_price" name="start_price" 
+                                           min="0.01" step="0.01" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="min_increment" class="form-label">Minimum Bid Increment ($)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="min_increment" name="min_increment" 
+                                           min="0.01" step="0.01" value="1.00" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="duration_days" class="form-label">Auction Duration</label>
+                            <select class="form-select" id="duration_days" name="duration_days" required>
+                                <option value="1">24 hours</option>
+                                <option value="3">3 days</option>
+                                <option value="5">5 days</option>
+                                <option value="7" selected>7 days</option>
+                                <option value="10">10 days</option>
+                                <option value="14">14 days</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="images" class="form-label">Item Images</label>
+                            <input class="form-control" type="file" id="images" name="images" multiple accept="image/*">
+                            <div class="form-text">Upload clear photos from different angles. First image will be the main photo.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('list_auctions') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Create Auction</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Client-side validation
+const form = document.querySelector('form');
+form.addEventListener('submit', (e) => {
+    const startPrice = parseFloat(document.getElementById('start_price').value);
+    const minIncrement = parseFloat(document.getElementById('min_increment').value);
+    
+    if (startPrice <= 0) {
+        e.preventDefault();
+        alert('Starting price must be greater than 0');
+        return false;
+    }
+    
+    if (minIncrement <= 0) {
+        e.preventDefault();
+        alert('Minimum bid increment must be greater than 0');
+        return false;
+    }
+    
+    return true;
+});
+</script>
+{% endblock %}

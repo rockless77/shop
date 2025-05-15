@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Settings Sidebar -->
+        <div class="col-md-3 mb-4">
+            <div class="list-group">
+                <a href="{{ url_for('profile_settings') }}" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-person-badge me-2"></i> Profile Settings
+                </a>
+                <a href="{{ url_for('notification_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-bell me-2"></i> Notification Settings
+                </a>
+                <a href="{{ url_for('privacy_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield-lock me-2"></i> Privacy Settings
+                </a>
+                <a href="{{ url_for('address_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-geo-alt me-2"></i> Address Settings
+                </a>
+                <a href="{{ url_for('payment_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-credit-card me-2"></i> Payment Settings
+                </a>
+                <a href="{{ url_for('security_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield me-2"></i> Security Settings
+                </a>
+                <a href="{{ url_for('settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-gear me-2"></i> All Settings
+                </a>
+                <a href="{{ url_for('profile') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-arrow-left me-2"></i> Back to Profile
+                </a>
+            </div>
+        </div>
+        
+        <!-- Profile Settings Form -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Profile Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('profile_settings') }}" enctype="multipart/form-data">
+                        <!-- Profile Image Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 text-center">
+                                {% if user.profile_image %}
+                                    <img src="{{ url_for('static', filename='uploads/profiles/' + user.profile_image) }}" alt="Profile Picture" class="img-fluid rounded-circle mb-3" style="max-width: 150px; max-height: 150px;">
+                                {% else %}
+                                    <img src="{{ url_for('static', filename='images/default_profile.jpg') }}" alt="Default Profile" class="img-fluid rounded-circle mb-3" style="max-width: 150px; max-height: 150px;">
+                                {% endif %}
+                                <div class="mb-3">
+                                    <label for="profile_image" class="form-label">Change Profile Picture</label>
+                                    <input class="form-control form-control-sm" type="file" id="profile_image" name="profile_image" accept="image/*">
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <h5>Account Information</h5>
+                                <p class="text-muted">This is your public profile. Other users will see this information depending on your privacy settings.</p>
+                                
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="username" value="{{ user.username }}" disabled>
+                                    <small class="text-muted">Username cannot be changed</small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" id="email" value="{{ user.email }}" disabled>
+                                    <small class="text-muted">To change your email, please go to Security Settings</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Personal Information Section -->
+                        <h5>Personal Information</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user.first_name or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user.last_name or '' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="phone_number" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone_number" name="phone_number" value="{{ user.phone_number or '' }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="bio" class="form-label">About Me / Bio</label>
+                            <textarea class="form-control" id="bio" name="bio" rows="3">{{ user.bio or '' }}</textarea>
+                            <small class="text-muted">Tell others a bit about yourself (max 500 characters)</small>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Interface Preferences Section -->
+                        <h5>Interface Preferences</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="theme" class="form-label">Theme</label>
+                                <select class="form-select" id="theme" name="theme">
+                                    <option value="light" {% if user.theme == 'light' %}selected{% endif %}>Light Mode</option>
+                                    <option value="dark" {% if user.theme == 'dark' %}selected{% endif %}>Dark Mode</option>
+                                    <option value="system" {% if user.theme == 'system' %}selected{% endif %}>Use System Setting</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="language" class="form-label">Language</label>
+                                <select class="form-select" id="language" name="language">
+                                    <option value="en" {% if user.language == 'en' %}selected{% endif %}>English</option>
+                                    <option value="es" {% if user.language == 'es' %}selected{% endif %}>Spanish</option>
+                                    <option value="fr" {% if user.language == 'fr' %}selected{% endif %}>French</option>
+                                    <option value="de" {% if user.language == 'de' %}selected{% endif %}>German</option>
+                                    <option value="zh" {% if user.language == 'zh' %}selected{% endif %}>Chinese</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="timezone" class="form-label">Timezone</label>
+                                <select class="form-select" id="timezone" name="timezone">
+                                    <option value="UTC" {% if user.timezone == 'UTC' %}selected{% endif %}>UTC</option>
+                                    <option value="America/New_York" {% if user.timezone == 'America/New_York' %}selected{% endif %}>Eastern Time (ET)</option>
+                                    <option value="America/Chicago" {% if user.timezone == 'America/Chicago' %}selected{% endif %}>Central Time (CT)</option>
+                                    <option value="America/Denver" {% if user.timezone == 'America/Denver' %}selected{% endif %}>Mountain Time (MT)</option>
+                                    <option value="America/Los_Angeles" {% if user.timezone == 'America/Los_Angeles' %}selected{% endif %}>Pacific Time (PT)</option>
+                                    <option value="Europe/London" {% if user.timezone == 'Europe/London' %}selected{% endif %}>London (GMT/BST)</option>
+                                    <option value="Europe/Paris" {% if user.timezone == 'Europe/Paris' %}selected{% endif %}>Central European Time (CET)</option>
+                                    <option value="Asia/Tokyo" {% if user.timezone == 'Asia/Tokyo' %}selected{% endif %}>Japan Standard Time (JST)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

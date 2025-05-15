@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>Ticket #{{ ticket.id }}: {{ ticket.subject }}</h2>
+                    <div class="d-flex gap-2 mt-2">
+                        {% if ticket.status == 'open' %}
+                            <span class="badge bg-info">Open</span>
+                        {% elif ticket.status == 'in_progress' %}
+                            <span class="badge bg-primary">In Progress</span>
+                        {% elif ticket.status == 'waiting_for_response' %}
+                            <span class="badge bg-warning text-dark">Waiting for Response</span>
+                        {% elif ticket.status == 'resolved' %}
+                            <span class="badge bg-success">Resolved</span>
+                        {% elif ticket.status == 'closed' %}
+                            <span class="badge bg-secondary">Closed</span>
+                        {% endif %}
+                        
+                        {% if ticket.priority == 'low' %}
+                            <span class="badge bg-light text-dark">Low Priority</span>
+                        {% elif ticket.priority == 'medium' %}
+                            <span class="badge bg-primary">Medium Priority</span>
+                        {% elif ticket.priority == 'high' %}
+                            <span class="badge bg-warning text-dark">High Priority</span>
+                        {% elif ticket.priority == 'critical' %}
+                            <span class="badge bg-danger">Critical Priority</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted d-block">Created: {{ ticket.created_at.strftime('%b %d, %Y %H:%M') }}</small>
+                    <small class="text-muted d-block">Last Updated: {{ ticket.updated_at.strftime('%b %d, %Y %H:%M') }}</small>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <img src="{{ url_for('static', filename='img/default_profile.jpg') }}" 
+                             class="rounded-circle me-2" width="30" height="30" 
+                             alt="{{ ticket.user.username }}">
+                        <strong>{{ ticket.user.username }}</strong>
+                        <small class="text-muted ms-2">(Original Message)</small>
+                    </div>
+                    <small class="text-muted">{{ ticket.created_at.strftime('%b %d, %Y %H:%M') }}</small>
+                </div>
+                <div class="card-body">
+                    <div class="ticket-message">
+                        {{ ticket.message|replace('\n', '<br>')|safe }}
+                    </div>
+                </div>
+            </div>
+            
+            {% if ticket.status != 'closed' %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Reply to Ticket</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('reply_ticket', ticket_id=ticket.id) }}">
+                            <div class="mb-3">
+                                <label for="message" class="form-label">Your Message</label>
+                                <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                                <div class="form-text">
+                                    Our support team will get back to you as soon as possible.
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send me-1"></i> Send Reply
+                                </button>
+                                <form method="POST" action="{{ url_for('close_ticket', ticket_id=ticket.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-danger" 
+                                            onclick="return confirm('Are you sure you want to close this ticket?')">
+                                        <i class="bi bi-x-circle me-1"></i> Close Ticket
+                                    </button>
+                                </form>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    This ticket is closed. If you need further assistance, please 
+                    <a href="{{ url_for('support') }}" class="alert-link">create a new support ticket</a>.
+                </div>
+            {% endif %}
+            
+            <div class="text-center mt-4">
+                <a href="{{ url_for('support_tickets') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to My Tickets
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ticket-message {
+        white-space: pre-line;
+        line-height: 1.6;
+    }
+    
+    .ticket-message pre {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        overflow-x: auto;
+    }
+    
+    .ticket-message code {
+        background-color: #f8f9fa;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.2rem;
+        font-size: 0.875em;
+    }
+</style>
+{% endblock %}

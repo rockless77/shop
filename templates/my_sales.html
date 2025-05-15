@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>My Sales</h2>
+  {% for o in orders %}
+    <div class="sale">
+      <h3>Order #{{ o.id }} — {{ o.created_at.strftime('%Y-%m-%d') }}</h3>
+      <p>Status: {{ o.status }}</p>
+      <p>
+        Tracking #:
+        {% if o.tracking_number %}
+          <strong>{{ o.tracking_number }}</strong>
+        {% else %}
+          <em>Not set</em>
+        {% endif %}
+      </p>
+
+      <!-- Seller can update tracking here -->
+      <form action="{{ url_for('update_order', oid=o.id) }}" method="POST">
+        <label>
+          New Tracking:
+          <input type="text" name="tracking_number" placeholder="e.g. 1Z999AA10123456784">
+        </label>
+        <button type="submit">Save</button>
+      </form>
+    </div>
+  {% endfor %}
+{% endblock %}
