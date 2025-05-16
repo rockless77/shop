@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Settings Sidebar -->
+        <div class="col-md-3 mb-4">
+            <div class="list-group">
+                <a href="{{ url_for('profile_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person-badge me-2"></i> Profile Settings
+                </a>
+                <a href="{{ url_for('notification_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-bell me-2"></i> Notification Settings
+                </a>
+                <a href="{{ url_for('privacy_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield-lock me-2"></i> Privacy Settings
+                </a>
+                <a href="{{ url_for('address_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-geo-alt me-2"></i> Address Settings
+                </a>
+                <a href="{{ url_for('payment_settings') }}" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-credit-card me-2"></i> Payment Settings
+                </a>
+                <a href="{{ url_for('security_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield me-2"></i> Security Settings
+                </a>
+                <a href="{{ url_for('settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-gear me-2"></i> All Settings
+                </a>
+                <a href="{{ url_for('profile') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-arrow-left me-2"></i> Back to Profile
+                </a>
+            </div>
+        </div>
+        
+        <!-- Add Payment Method Form -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        {% if type == 'credit_card' %}
+                            Add Credit/Debit Card
+                        {% elif type == 'paypal' %}
+                            Connect PayPal Account
+                        {% elif type == 'bank_transfer' %}
+                            Add Bank Account
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('add_payment_method', type=type) }}">
+                        <!-- Common Fields -->
+                        <div class="mb-3">
+                            <label for="nickname" class="form-label">Nickname (Optional)</label>
+                            <input type="text" class="form-control" id="nickname" name="nickname" placeholder="e.g., Personal Card, Business Account">
+                            <div class="form-text">A name to help you identify this payment method.</div>
+                        </div>
+                        
+                        {% if type == 'credit_card' %}
+                            <!-- Credit Card Fields -->
+                            <div class="mb-3">
+                                <label for="card_brand" class="form-label">Card Type</label>
+                                <select class="form-select" id="card_brand" name="card_brand" required>
+                                    <option value="">-- Select Card Type --</option>
+                                    <option value="Visa">Visa</option>
+                                    <option value="Mastercard">Mastercard</option>
+                                    <option value="American Express">American Express</option>
+                                    <option value="Discover">Discover</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="card_number" class="form-label">Card Number</label>
+                                <input type="text" class="form-control" id="card_number" name="card_number" placeholder="•••• •••• •••• ••••" required>
+                                <div class="form-text">Only the last 4 digits will be stored for security.</div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="expiry_month" class="form-label">Expiry Month</label>
+                                    <select class="form-select" id="expiry_month" name="expiry_month" required>
+                                        <option value="">-- Month --</option>
+                                        {% for month in range(1, 13) %}
+                                            <option value="{{ month }}">{{ '%02d' % month }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="expiry_year" class="form-label">Expiry Year</label>
+                                    <select class="form-select" id="expiry_year" name="expiry_year" required>
+                                        <option value="">-- Year --</option>
+                                        {% for year in range(2023, 2041) %}
+                                            <option value="{{ year }}">{{ year }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="cvv" class="form-label">CVV</label>
+                                <input type="password" class="form-control" id="cvv" name="cvv" placeholder="•••" required>
+                                <div class="form-text">The 3 or 4 digit security code on your card. This will not be stored.</div>
+                            </div>
+                        {% elif type == 'paypal' %}
+                            <!-- PayPal Fields -->
+                            <div class="mb-3">
+                                <label for="paypal_email" class="form-label">PayPal Email</label>
+                                <input type="email" class="form-control" id="paypal_email" name="paypal_email" placeholder="your-email@example.com" required>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i> You'll be redirected to PayPal to complete the connection process.
+                            </div>
+                        {% elif type == 'bank_transfer' %}
+                            <!-- Bank Account Fields -->
+                            <div class="mb-3">
+                                <label for="account_name" class="form-label">Account Holder Name</label>
+                                <input type="text" class="form-control" id="account_name" name="account_name" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="account_number" class="form-label">Account Number</label>
+                                <input type="text" class="form-control" id="account_number" name="account_number" required>
+                                <div class="form-text">Only the last 4 digits will be stored for security.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="routing_number" class="form-label">Routing Number</label>
+                                <input type="text" class="form-control" id="routing_number" name="routing_number" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="bank_name" class="form-label">Bank Name</label>
+                                <input type="text" class="form-control" id="bank_name" name="bank_name" required>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="is_default" name="is_default">
+                            <label class="form-check-label" for="is_default">
+                                Set as default payment method
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('payment_settings') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i> Save Payment Method
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -15,6 +15,9 @@
                 <a href="{{ url_for('privacy_settings') }}" class="list-group-item list-group-item-action">
                     <i class="bi bi-shield-lock me-2"></i> Privacy Settings
                 </a>
+                <a href="{{ url_for('display_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-display me-2"></i> Display Settings
+                </a>
                 <a href="{{ url_for('address_settings') }}" class="list-group-item list-group-item-action">
                     <i class="bi bi-geo-alt me-2"></i> Address Settings
                 </a>
@@ -64,6 +67,17 @@
                             <h5 class="card-title"><i class="bi bi-shield-lock me-2"></i> Privacy Settings</h5>
                             <p class="card-text">Control what information is visible to other users on the platform.</p>
                             <a href="{{ url_for('privacy_settings') }}" class="btn btn-outline-primary">Manage Privacy</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Display Settings Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-display me-2"></i> Display Settings</h5>
+                            <p class="card-text">Customize how the platform looks and feels for you.</p>
+                            <a href="{{ url_for('display_settings') }}" class="btn btn-outline-primary">Manage Display</a>
                         </div>
                     </div>
                 </div>

@@ -98,40 +98,85 @@
                                 <h5 class="mb-0">Shipping Preferences</h5>
                             </div>
                             <div class="card-body">
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle me-2"></i> Shipping preferences will be available in a future update.
+                                <div class="mb-3">
+                                    <label for="preferred_shipping_method" class="form-label">Default Shipping Method</label>
+                                    <select class="form-select" id="preferred_shipping_method" name="preferred_shipping_method">
+                                        <option value="standard" {% if user.preferred_shipping_method == 'standard' %}selected{% endif %}>Standard Shipping (3-5 business days)</option>
+                                        <option value="express" {% if user.preferred_shipping_method == 'express' %}selected{% endif %}>Express Shipping (1-2 business days)</option>
+                                        <option value="overnight" {% if user.preferred_shipping_method == 'overnight' %}selected{% endif %}>Overnight Shipping (Next business day)</option>
+                                    </select>
+                                    <div class="form-text">This will be your default shipping method during checkout.</div>
                                 </div>
                                 
-                                <div class="form-check mb-3 disabled">
-                                    <input class="form-check-input" type="checkbox" id="preferred_shipping" disabled>
-                                    <label class="form-check-label" for="preferred_shipping">
-                                        Express Shipping as Default
-                                    </label>
-                                    <div class="text-muted small">If enabled, express shipping will be selected by default during checkout</div>
-                                </div>
-                                
-                                <div class="form-check mb-3 disabled">
-                                    <input class="form-check-input" type="checkbox" id="shipping_notifications" disabled>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="shipping_notifications" name="shipping_notifications" {% if user.shipping_notifications %}checked{% endif %}>
                                     <label class="form-check-label" for="shipping_notifications">
                                         Enhanced Shipping Notifications
                                     </label>
                                     <div class="text-muted small">Receive detailed tracking updates for your shipments</div>
                                 </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="signature_required" name="signature_required" {% if user.signature_required %}checked{% endif %}>
+                                    <label class="form-check-label" for="signature_required">
+                                        Require Signature on Delivery
+                                    </label>
+                                    <div class="text-muted small">For added security, require a signature for package delivery</div>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="delivery_instructions" name="show_delivery_instructions" {% if user.show_delivery_instructions %}checked{% endif %}>
+                                    <label class="form-check-label" for="delivery_instructions">
+                                        Show Delivery Instructions at Checkout
+                                    </label>
+                                    <div class="text-muted small">Allow adding special delivery instructions during checkout</div>
+                                </div>
                             </div>
                         </div>
                         
-                        <!-- Multiple Addresses Feature Teaser -->
+                        <!-- Multiple Addresses -->
                         <div class="card mb-4">
                             <div class="card-header bg-light">
-                                <h5 class="mb-0">Multiple Addresses (Coming Soon)</h5>
+                                <h5 class="mb-0">Saved Addresses</h5>
                             </div>
                             <div class="card-body">
-                                <p class="text-muted">In a future update, you'll be able to save multiple shipping addresses for different purposes (home, work, gift recipients, etc.).</p>
+                                <p class="text-muted">Manage your saved shipping addresses for different purposes (home, work, gift recipients, etc.).</p>
+                                
+                                {% if shipping_addresses %}
+                                    <div class="list-group mb-3">
+                                        {% for address in shipping_addresses %}
+                                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    {% if address.nickname %}
+                                                        <span class="fw-bold">{{ address.nickname }}</span><br>
+                                                    {% endif %}
+                                                    <span>{{ address.recipient_name }}</span><br>
+                                                    <span>{{ address.street_address1 }}</span>
+                                                    {% if address.street_address2 %}<br><span>{{ address.street_address2 }}</span>{% endif %}
+                                                    <br><span>{{ address.city }}, {{ address.state }} {{ address.postal_code }}</span>
+                                                    <br><span>{{ address.country }}</span>
+                                                    {% if address.is_default %}
+                                                        <span class="badge bg-primary ms-2">Default</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    {% if not address.is_default %}
+                                                        <a href="{{ url_for('set_default_address', address_id=address.id) }}" class="btn btn-sm btn-outline-primary me-2">Set Default</a>
+                                                    {% endif %}
+                                                    <a href="{{ url_for('edit_address', address_id=address.id) }}" class="btn btn-sm btn-outline-secondary me-2">Edit</a>
+                                                    <a href="{{ url_for('delete_address', address_id=address.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this address?');">Delete</a>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p>You don't have any saved addresses yet.</p>
+                                {% endif %}
                                 
                                 <div class="d-grid gap-2">
-                                    <button type="button" class="btn btn-outline-secondary" disabled>
-                                        <i class="bi bi-plus-circle me-2"></i> Add Another Address
-                                    </button>
+                                    <a href="{{ url_for('add_address') }}" class="btn btn-primary">
+                                        <i class="bi bi-plus-circle me-2"></i> Add New Address
+                                    </a>
                                 </div>
                             </div>
                         </div>

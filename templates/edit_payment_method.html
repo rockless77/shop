@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Settings Sidebar -->
+        <div class="col-md-3 mb-4">
+            <div class="list-group">
+                <a href="{{ url_for('profile_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person-badge me-2"></i> Profile Settings
+                </a>
+                <a href="{{ url_for('notification_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-bell me-2"></i> Notification Settings
+                </a>
+                <a href="{{ url_for('privacy_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield-lock me-2"></i> Privacy Settings
+                </a>
+                <a href="{{ url_for('address_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-geo-alt me-2"></i> Address Settings
+                </a>
+                <a href="{{ url_for('payment_settings') }}" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-credit-card me-2"></i> Payment Settings
+                </a>
+                <a href="{{ url_for('security_settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-shield me-2"></i> Security Settings
+                </a>
+                <a href="{{ url_for('settings') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-gear me-2"></i> All Settings
+                </a>
+                <a href="{{ url_for('profile') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-arrow-left me-2"></i> Back to Profile
+                </a>
+            </div>
+        </div>
+        
+        <!-- Edit Payment Method Form -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        {% if method.payment_type == 'credit_card' %}
+                            Edit Credit/Debit Card
+                        {% elif method.payment_type == 'paypal' %}
+                            Edit PayPal Account
+                        {% elif method.payment_type == 'bank_transfer' %}
+                            Edit Bank Account
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_payment_method', method_id=method.id) }}">
+                        <!-- Common Fields -->
+                        <div class="mb-3">
+                            <label for="nickname" class="form-label">Nickname (Optional)</label>
+                            <input type="text" class="form-control" id="nickname" name="nickname" value="{{ method.nickname or '' }}" placeholder="e.g., Personal Card, Business Account">
+                            <div class="form-text">A name to help you identify this payment method.</div>
+                        </div>
+                        
+                        {% if method.payment_type == 'credit_card' %}
+                            <!-- Credit Card Fields -->
+                            <div class="mb-3">
+                                <label class="form-label">Card Type</label>
+                                <input type="text" class="form-control" value="{{ method.card_brand }}" disabled>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Card Number</label>
+                                <input type="text" class="form-control" value="•••• •••• •••• {{ method.last_four }}" disabled>
+                                <div class="form-text">For security, you cannot edit the card number.</div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="expiry_month" class="form-label">Expiry Month</label>
+                                    <select class="form-select" id="expiry_month" name="expiry_month" required>
+                                        <option value="">-- Month --</option>
+                                        {% for month in range(1, 13) %}
+                                            <option value="{{ month }}" {% if method.expiry_month == month %}selected{% endif %}>{{ '%02d' % month }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="expiry_year" class="form-label">Expiry Year</label>
+                                    <select class="form-select" id="expiry_year" name="expiry_year" required>
+                                        <option value="">-- Year --</option>
+                                        {% for year in range(2023, 2041) %}
+                                            <option value="{{ year }}" {% if method.expiry_year == year %}selected{% endif %}>{{ year }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        {% elif method.payment_type == 'paypal' %}
+                            <!-- PayPal Fields -->
+                            <div class="mb-3">
+                                <label class="form-label">PayPal Account</label>
+                                <input type="text" class="form-control" value="Connected PayPal Account" disabled>
+                                <div class="form-text">To update your PayPal information, please remove this account and add a new one.</div>
+                            </div>
+                        {% elif method.payment_type == 'bank_transfer' %}
+                            <!-- Bank Account Fields -->
+                            <div class="mb-3">
+                                <label class="form-label">Account Number</label>
+                                <input type="text" class="form-control" value="•••• •••• •••• {{ method.last_four }}" disabled>
+                                <div class="form-text">For security, you cannot edit the account number.</div>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="is_default" name="is_default" {% if method.is_default %}checked{% endif %}>
+                            <label class="form-check-label" for="is_default">
+                                Set as default payment method
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('payment_settings') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

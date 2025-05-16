@@ -108,11 +108,13 @@ class User(db.Model, UserMixin):
     email_frequency = db.Column(db.String(20), default='daily')  # immediate, daily, weekly
     
     # Privacy Preferences
-    profile_visibility = db.Column(db.String(20), default='public')  # public, friends, private
-    activity_visibility = db.Column(db.String(20), default='public')  # public, friends, private
+    profile_visibility = db.Column(db.String(20), default='public')  # public, registered, private
+    activity_visibility = db.Column(db.String(20), default='public')  # public, registered, private
     show_email = db.Column(db.Boolean, default=False)
     show_phone = db.Column(db.Boolean, default=False)
     show_full_name = db.Column(db.Boolean, default=False)
+    show_bid_activity = db.Column(db.Boolean, default=False)
+    show_won_auctions = db.Column(db.Boolean, default=False)
     
     # Account Information
     default_address = db.Column(db.String(500))
@@ -129,14 +131,28 @@ class User(db.Model, UserMixin):
     account_created = db.Column(db.DateTime, default=db.func.now())
     last_login = db.Column(db.DateTime, default=db.func.now())
     
+    # Shipping Preferences
+    preferred_shipping_method = db.Column(db.String(20), default='standard')  # standard, express, overnight
+    shipping_notifications = db.Column(db.Boolean, default=True)
+    signature_required = db.Column(db.Boolean, default=False)
+    show_delivery_instructions = db.Column(db.Boolean, default=True)
+    
+    # Account Recovery
+    recovery_email = db.Column(db.String(150))
+    recovery_phone = db.Column(db.String(20))
+    security_question1 = db.Column(db.String(50))
+    security_answer1 = db.Column(db.String(100))
+    security_question2 = db.Column(db.String(50))
+    security_answer2 = db.Column(db.String(100))
+    
     # Relationships
     products = db.relationship('Product', back_populates='seller', lazy=True)
     cart_items = db.relationship('Cart', backref='user', lazy=True)
     wishlist_items = db.relationship('Wishlist', backref='user', lazy=True)
     orders = db.relationship('Order', backref='user', lazy=True)
-    # No need for backref since we defined the relationship on both sides
-    user_bids = db.relationship('Bid', foreign_keys='Bid.user_id', lazy=True)
-    support_tickets = db.relationship('SupportTicket', back_populates='user', lazy=True)
+    user_bids = db.relationship('Bid', backref='bidder', foreign_keys='Bid.user_id', lazy=True)
+    # Direct relationship without backref
+    tickets = db.relationship('SupportTicket', foreign_keys='SupportTicket.user_id', lazy=True)
     
     def set_password(self, pw):
         self.password_hash = generate_password_hash(pw)
@@ -206,7 +222,6 @@ class Bid(db.Model):
     product_id  = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     
     # Relationships
-    bidder = db.relationship('User', foreign_keys=[user_id], lazy=True)
     product = db.relationship('Product', back_populates='bids')
 
 class Cart(db.Model):
@@ -244,6 +259,59 @@ class OrderItem(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     quantity   = db.Column(db.Integer, default=1)
 
+
+class PaymentMethod(db.Model):
+    __tablename__ = 'payment_method'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    payment_type = db.Column(db.String(50), nullable=False)  # credit_card, paypal, bank_account, etc.
+    is_default = db.Column(db.Boolean, default=False)
+    nickname = db.Column(db.String(100))
+    last_four = db.Column(db.String(4))  # Last 4 digits of card or account
+    expiry_month = db.Column(db.Integer)  # For credit cards
+    expiry_year = db.Column(db.Integer)  # For credit cards
+    card_brand = db.Column(db.String(20))  # visa, mastercard, etc.
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    
+    # Relationship with User
+    user = db.relationship('User', backref='payment_methods')
+
+
+class ShippingAddress(db.Model):
+    __tablename__ = 'shipping_address'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    nickname = db.Column(db.String(100))  # e.g., Home, Work, etc.
+    recipient_name = db.Column(db.String(100), nullable=False)
+    street_address1 = db.Column(db.String(100), nullable=False)
+    street_address2 = db.Column(db.String(100))
+    city = db.Column(db.String(50), nullable=False)
+    state = db.Column(db.String(50), nullable=False)
+    postal_code = db.Column(db.String(20), nullable=False)
+    country = db.Column(db.String(50), nullable=False)
+    phone_number = db.Column(db.String(20))
+    is_default = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    
+    # Relationship with User
+    user = db.relationship('User', backref='shipping_addresses')
+
+
+class LoginHistory(db.Model):
+    __tablename__ = 'login_history'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    login_time = db.Column(db.DateTime, default=db.func.now())
+    ip_address = db.Column(db.String(50))
+    user_agent = db.Column(db.String(255))  # Browser/device info
+    location = db.Column(db.String(100))    # Approximate location based on IP
+    success = db.Column(db.Boolean, default=True)  # Whether login was successful
+    
+    # Relationship with User
+    user = db.relationship('User', backref='login_history')
+
 class SupportTicket(db.Model):
     __tablename__ = 'support_ticket'
     id = db.Column(db.Integer, primary_key=True)
@@ -255,8 +323,8 @@ class SupportTicket(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.now())
     updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
     
-    # Relationship with User
-    user = db.relationship('User', back_populates='support_tickets', lazy=True)
+    # Direct relationship without backref
+    creator = db.relationship('User', foreign_keys=[user_id], lazy=True)
     
     def __repr__(self):
         return f'<SupportTicket {self.id} - {self.subject}>'           # ← new
@@ -351,10 +419,19 @@ def notification_settings():
     if request.method == 'POST':
         # Update notification settings
         current_user.email_notifications = 'email_notifications' in request.form
+        current_user.push_notifications = 'push_notifications' in request.form
+        current_user.sms_notifications = 'sms_notifications' in request.form
+        
+        # Update notification types
         current_user.bid_notifications = 'bid_notifications' in request.form
         current_user.auction_end_notifications = 'auction_end_notifications' in request.form
         current_user.order_update_notifications = 'order_update_notifications' in request.form
+        current_user.price_drop_notifications = 'price_drop_notifications' in request.form
+        current_user.new_listing_notifications = 'new_listing_notifications' in request.form
+        
+        # Update email preferences
         current_user.marketing_emails = 'marketing_emails' in request.form
+        current_user.email_frequency = request.form.get('email_frequency', 'daily')
         
         # Save changes
         db.session.commit()
@@ -367,10 +444,18 @@ def notification_settings():
 @login_required
 def privacy_settings():
     if request.method == 'POST':
-        # Update privacy settings
-        current_user.show_email = True if request.form.get('show_email') else False
-        current_user.show_phone = True if request.form.get('show_phone') else False
-        current_user.show_full_name = True if request.form.get('show_full_name') else False
+        # Update personal information visibility
+        current_user.show_email = 'show_email' in request.form
+        current_user.show_phone = 'show_phone' in request.form
+        current_user.show_full_name = 'show_full_name' in request.form
+        
+        # Update profile and activity visibility
+        current_user.profile_visibility = request.form.get('profile_visibility', 'public')
+        current_user.activity_visibility = request.form.get('activity_visibility', 'public')
+        
+        # Update activity privacy settings
+        current_user.show_bid_activity = 'show_bid_activity' in request.form
+        current_user.show_won_auctions = 'show_won_auctions' in request.form
         
         db.session.commit()
         flash('Privacy settings updated successfully!', 'success')
@@ -378,22 +463,157 @@ def privacy_settings():
     
     return render_template('settings_privacy.html', user=current_user)
 
+@app.route('/settings/display', methods=['GET', 'POST'])
+@login_required
+def display_settings():
+    if request.method == 'POST':
+        # Update theme and appearance settings
+        current_user.theme = request.form.get('theme', 'light')
+        
+        # Update language and localization settings
+        current_user.language = request.form.get('language', 'en')
+        current_user.timezone = request.form.get('timezone', 'UTC')
+        
+        # Update display preferences
+        current_user.items_per_page = int(request.form.get('items_per_page', 10))
+        current_user.default_currency = request.form.get('default_currency', 'USD')
+        
+        # Save changes
+        db.session.commit()
+        flash('Display settings updated successfully!', 'success')
+        return redirect(url_for('display_settings'))
+    
+    return render_template('settings_display.html', user=current_user)
+
 @app.route('/settings/address', methods=['GET', 'POST'])
 @login_required
 def address_settings():
     if request.method == 'POST':
-        # Update address
+        # Update address settings
         current_user.default_address = request.form.get('address')
         current_user.default_city = request.form.get('city')
         current_user.default_state = request.form.get('state')
         current_user.default_zip = request.form.get('zip')
         current_user.default_country = request.form.get('country')
         
+        # Update shipping preferences
+        current_user.preferred_shipping_method = request.form.get('preferred_shipping_method', 'standard')
+        current_user.shipping_notifications = 'shipping_notifications' in request.form
+        current_user.signature_required = 'signature_required' in request.form
+        current_user.show_delivery_instructions = 'show_delivery_instructions' in request.form
+        
         db.session.commit()
         flash('Address settings updated successfully!', 'success')
         return redirect(url_for('address_settings'))
     
-    return render_template('settings_address.html', user=current_user)
+    # Get user's saved shipping addresses
+    shipping_addresses = ShippingAddress.query.filter_by(user_id=current_user.id).all()
+    
+    return render_template('settings_address.html', user=current_user, shipping_addresses=shipping_addresses)
+
+
+@app.route('/settings/address/add', methods=['GET', 'POST'])
+@login_required
+def add_address():
+    if request.method == 'POST':
+        # Create new shipping address
+        new_address = ShippingAddress(
+            user_id=current_user.id,
+            nickname=request.form.get('nickname'),
+            recipient_name=request.form.get('recipient_name'),
+            street_address1=request.form.get('street_address1'),
+            street_address2=request.form.get('street_address2'),
+            city=request.form.get('city'),
+            state=request.form.get('state'),
+            postal_code=request.form.get('postal_code'),
+            country=request.form.get('country'),
+            phone_number=request.form.get('phone_number'),
+            is_default=request.form.get('is_default') == 'on'
+        )
+        
+        # If this is set as default, unset any other default addresses
+        if new_address.is_default:
+            ShippingAddress.query.filter_by(user_id=current_user.id, is_default=True).update({ShippingAddress.is_default: False})
+        
+        db.session.add(new_address)
+        db.session.commit()
+        
+        flash('Shipping address added successfully!', 'success')
+        return redirect(url_for('address_settings'))
+    
+    return render_template('add_address.html')
+
+
+@app.route('/settings/address/edit/<int:address_id>', methods=['GET', 'POST'])
+@login_required
+def edit_address(address_id):
+    # Get the shipping address
+    address = ShippingAddress.query.filter_by(id=address_id, user_id=current_user.id).first_or_404()
+    
+    if request.method == 'POST':
+        # Update shipping address
+        address.nickname = request.form.get('nickname')
+        address.recipient_name = request.form.get('recipient_name')
+        address.street_address1 = request.form.get('street_address1')
+        address.street_address2 = request.form.get('street_address2')
+        address.city = request.form.get('city')
+        address.state = request.form.get('state')
+        address.postal_code = request.form.get('postal_code')
+        address.country = request.form.get('country')
+        address.phone_number = request.form.get('phone_number')
+        address.is_default = request.form.get('is_default') == 'on'
+        
+        # If this is set as default, unset any other default addresses
+        if address.is_default:
+            ShippingAddress.query.filter(ShippingAddress.user_id == current_user.id, 
+                                       ShippingAddress.id != address.id, 
+                                       ShippingAddress.is_default == True).update({ShippingAddress.is_default: False})
+        
+        db.session.commit()
+        flash('Shipping address updated successfully!', 'success')
+        return redirect(url_for('address_settings'))
+    
+    return render_template('edit_address.html', address=address)
+
+
+@app.route('/settings/address/delete/<int:address_id>')
+@login_required
+def delete_address(address_id):
+    # Get the shipping address
+    address = ShippingAddress.query.filter_by(id=address_id, user_id=current_user.id).first_or_404()
+    
+    # Check if it's the default address
+    was_default = address.is_default
+    
+    # Delete the shipping address
+    db.session.delete(address)
+    
+    # If it was the default address, set another one as default if available
+    if was_default:
+        new_default = ShippingAddress.query.filter_by(user_id=current_user.id).first()
+        if new_default:
+            new_default.is_default = True
+    
+    db.session.commit()
+    flash('Shipping address deleted successfully!', 'success')
+    return redirect(url_for('address_settings'))
+
+
+@app.route('/settings/address/set-default/<int:address_id>')
+@login_required
+def set_default_address(address_id):
+    # Get the shipping address
+    address = ShippingAddress.query.filter_by(id=address_id, user_id=current_user.id).first_or_404()
+    
+    # Unset any other default addresses
+    ShippingAddress.query.filter_by(user_id=current_user.id, is_default=True).update({ShippingAddress.is_default: False})
+    
+    # Set this address as default
+    address.is_default = True
+    db.session.commit()
+    
+    flash('Default shipping address updated successfully!', 'success')
+    return redirect(url_for('address_settings'))
 
 @app.route('/settings/payment', methods=['GET', 'POST'])
 @login_required
@@ -407,41 +627,208 @@ def payment_settings():
         flash('Payment settings updated successfully!', 'success')
         return redirect(url_for('payment_settings'))
     
-    return render_template('settings_payment.html', user=current_user)
+    # Get user's saved payment methods
+    payment_methods = PaymentMethod.query.filter_by(user_id=current_user.id).all()
+    
+    return render_template('settings_payment.html', user=current_user, payment_methods=payment_methods)
 
+
+@app.route('/settings/payment/add/<type>', methods=['GET', 'POST'])
+@login_required
+def add_payment_method(type):
+    if type not in ['credit_card', 'paypal', 'bank_transfer']:
+        flash('Invalid payment method type.', 'danger')
+        return redirect(url_for('payment_settings'))
+    
+    if request.method == 'POST':
+        # Create new payment method
+        new_method = PaymentMethod(
+            user_id=current_user.id,
+            payment_type=type,
+            nickname=request.form.get('nickname'),
+            is_default=request.form.get('is_default') == 'on'
+        )
+        
+        if type == 'credit_card':
+            # Validate and save credit card info
+            new_method.card_brand = request.form.get('card_brand')
+            new_method.last_four = request.form.get('card_number')[-4:] if request.form.get('card_number') else ''
+            new_method.expiry_month = request.form.get('expiry_month')
+            new_method.expiry_year = request.form.get('expiry_year')
+        elif type == 'bank_transfer':
+            # Save bank account info
+            new_method.last_four = request.form.get('account_number')[-4:] if request.form.get('account_number') else ''
+        
+        # If this is set as default, unset any other default methods
+        if new_method.is_default:
+            PaymentMethod.query.filter_by(user_id=current_user.id, is_default=True).update({PaymentMethod.is_default: False})
+        
+        db.session.add(new_method)
+        db.session.commit()
+        
+        flash('Payment method added successfully!', 'success')
+        return redirect(url_for('payment_settings'))
+    
+    return render_template('add_payment_method.html', type=type)
+
+
+@app.route('/settings/payment/edit/<int:method_id>', methods=['GET', 'POST'])
+@login_required
+def edit_payment_method(method_id):
+    # Get the payment method
+    method = PaymentMethod.query.filter_by(id=method_id, user_id=current_user.id).first_or_404()
+    
+    if request.method == 'POST':
+        # Update payment method
+        method.nickname = request.form.get('nickname')
+        method.is_default = request.form.get('is_default') == 'on'
+        
+        if method.payment_type == 'credit_card':
+            # Update credit card info
+            method.expiry_month = request.form.get('expiry_month')
+            method.expiry_year = request.form.get('expiry_year')
+        
+        # If this is set as default, unset any other default methods
+        if method.is_default:
+            PaymentMethod.query.filter(PaymentMethod.user_id == current_user.id, 
+                                      PaymentMethod.id != method.id, 
+                                      PaymentMethod.is_default == True).update({PaymentMethod.is_default: False})
+        
+        db.session.commit()
+        flash('Payment method updated successfully!', 'success')
+        return redirect(url_for('payment_settings'))
+    
+    return render_template('edit_payment_method.html', method=method)
+
+
+@app.route('/settings/payment/delete/<int:method_id>')
+@login_required
+def delete_payment_method(method_id):
+    # Get the payment method
+    method = PaymentMethod.query.filter_by(id=method_id, user_id=current_user.id).first_or_404()
+    
+    # Check if it's the default method
+    was_default = method.is_default
+    
+    # Delete the payment method
+    db.session.delete(method)
+    
+    # If it was the default method, set another one as default if available
+    if was_default:
+        new_default = PaymentMethod.query.filter_by(user_id=current_user.id).first()
+        if new_default:
+            new_default.is_default = True
+    
+    db.session.commit()
+    flash('Payment method deleted successfully!', 'success')
+    return redirect(url_for('payment_settings'))
+
+
+@app.route('/settings/payment/set-default/<int:method_id>')
+@login_required
+def set_default_payment_method(method_id):
+    # Get the payment method
+    method = PaymentMethod.query.filter_by(id=method_id, user_id=current_user.id).first_or_404()
+    
+    # Unset any other default methods
+    PaymentMethod.query.filter_by(user_id=current_user.id, is_default=True).update({PaymentMethod.is_default: False})
+    
+    # Set this method as default
+    method.is_default = True
+    db.session.commit()
+    
+    flash('Default payment method updated successfully!', 'success')
+    return redirect(url_for('payment_settings'))
 @app.route('/settings/security', methods=['GET', 'POST'])
 @login_required
 def security_settings():
     if request.method == 'POST':
-        # Check if changing password
-        current_password = request.form.get('current_password')
-        new_password = request.form.get('new_password')
-        confirm_password = request.form.get('confirm_password')
-        
-        if current_password and new_password and confirm_password:
-            # Verify current password
-            if not current_user.check_password(current_password):
-                flash('Current password is incorrect.', 'error')
+        # Handle password change
+        if 'update_password' in request.form:
+            current_password = request.form.get('current_password')
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+            
+            # Validate current password
+            if not check_password_hash(current_user.password_hash, current_password):
+                flash('Current password is incorrect.', 'danger')
                 return redirect(url_for('security_settings'))
             
-            # Verify new passwords match
+            # Validate new password
             if new_password != confirm_password:
-                flash('New passwords do not match.', 'error')
+                flash('New passwords do not match.', 'danger')
+                return redirect(url_for('security_settings'))
+            
+            if len(new_password) < 8:
+                flash('Password must be at least 8 characters long.', 'danger')
                 return redirect(url_for('security_settings'))
             
             # Update password
-            current_user.set_password(new_password)
-            flash('Password changed successfully!', 'success')
+            current_user.password_hash = generate_password_hash(new_password)
+            current_user.last_password_change = datetime.now()
+            db.session.commit()
+            
+            flash('Password updated successfully!', 'success')
+            return redirect(url_for('security_settings'))
         
-        # Update 2FA settings
+        # Handle two-factor authentication toggle
         current_user.two_factor_enabled = 'two_factor_enabled' in request.form
         
-        # Save changes
+        # Handle recovery email update
+        if 'update_recovery_email' in request.form:
+            recovery_email = request.form.get('recovery_email')
+            if recovery_email and recovery_email != current_user.email:  # Ensure recovery email is different from primary
+                current_user.recovery_email = recovery_email
+                flash('Recovery email updated successfully!', 'success')
+            elif recovery_email == current_user.email:
+                flash('Recovery email must be different from your primary email.', 'warning')
+        
+        # Handle recovery phone update
+        if 'update_recovery_phone' in request.form:
+            recovery_phone = request.form.get('recovery_phone')
+            if recovery_phone:
+                current_user.recovery_phone = recovery_phone
+                flash('Recovery phone updated successfully!', 'success')
+        
+        # Handle security questions update
+        if 'update_security_questions' in request.form:
+            security_question1 = request.form.get('security_question1')
+            security_answer1 = request.form.get('security_answer1')
+            security_question2 = request.form.get('security_question2')
+            security_answer2 = request.form.get('security_answer2')
+            
+            # Only update if both questions are selected and answers provided
+            if security_question1 and security_question2 and security_answer1 and security_answer2:
+                # Don't update if answer field contains the masked value
+                if security_answer1 != '********':
+                    current_user.security_question1 = security_question1
+                    current_user.security_answer1 = security_answer1
+                
+                if security_answer2 != '********':
+                    current_user.security_question2 = security_question2
+                    current_user.security_answer2 = security_answer2
+                
+                flash('Security questions updated successfully!', 'success')
+            else:
+                flash('Please select both security questions and provide answers.', 'warning')
+        
         db.session.commit()
-        flash('Security settings updated successfully!', 'success')
         return redirect(url_for('security_settings'))
     
-    return render_template('settings_security.html', user=current_user)
+    # Get recent login history (last 5 entries)
+    login_history = LoginHistory.query.filter_by(user_id=current_user.id).order_by(LoginHistory.login_time.desc()).limit(5).all()
+    
+    return render_template('settings_security.html', user=current_user, login_history=login_history)
+
+
+@app.route('/settings/security/login-history')
+@login_required
+def view_full_login_history():
+    # Get full login history
+    login_history = LoginHistory.query.filter_by(user_id=current_user.id).order_by(LoginHistory.login_time.desc()).all()
+    
+    return render_template('login_history.html', user=current_user, login_history=login_history)
+
 
 @app.route('/orders')
 @login_required
@@ -463,18 +850,54 @@ def order_detail(order_id):
 
 
 
-@app.route('/login', methods=['GET','POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method=='POST':
-        username = request.form['username']
-        password = request.form['password']
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
         user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
+        
+        # Get IP address and user agent
+        ip_address = request.remote_addr
+        user_agent = request.user_agent.string
+        location = 'Unknown'  # In a real app, you might use a geolocation service
+        
+        if user and check_password_hash(user.password_hash, password):
             login_user(user)
+            user.last_login = datetime.now()
+            
+            # Record successful login
+            login_record = LoginHistory(
+                user_id=user.id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                location=location,
+                success=True
+            )
+            db.session.add(login_record)
+            db.session.commit()
+            
             next_page = request.args.get('next')
             return redirect(next_page or url_for('index'))
-        flash('Invalid credentials', 'danger')
-        return redirect(url_for('login'))
+        else:
+            # Record failed login attempt if user exists
+            if user:
+                login_record = LoginHistory(
+                    user_id=user.id,
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                    location=location,
+                    success=False
+                )
+                db.session.add(login_record)
+                db.session.commit()
+            
+            flash('Invalid username or password', 'danger')
+    
     return render_template('login.html')
 
 
@@ -497,6 +920,64 @@ def register():
 def logout():
     logout_user()
     flash('Logged out.', 'info')
+    return redirect(url_for('index'))
+
+
+@app.route('/delete-account', methods=['POST'])
+@login_required
+def delete_account():
+    # Verify password
+    password = request.form.get('password')
+    if not check_password_hash(current_user.password_hash, password):
+        flash('Incorrect password. Account deletion canceled.', 'danger')
+        return redirect(url_for('privacy_settings'))
+    
+    # Get user ID before logging out
+    user_id = current_user.id
+    
+    # Log the user out
+    logout_user()
+    
+    # Delete all related data
+    # 1. Delete login history
+    LoginHistory.query.filter_by(user_id=user_id).delete()
+    
+    # 2. Delete payment methods
+    PaymentMethod.query.filter_by(user_id=user_id).delete()
+    
+    # 3. Delete shipping addresses
+    ShippingAddress.query.filter_by(user_id=user_id).delete()
+    
+    # 4. Delete support tickets
+    SupportTicket.query.filter_by(user_id=user_id).delete()
+    
+    # 5. Delete bids
+    Bid.query.filter_by(user_id=user_id).delete()
+    
+    # 6. Delete cart items
+    Cart.query.filter_by(user_id=user_id).delete()
+    
+    # 7. Delete orders
+    # First get all orders by this user
+    user_orders = Order.query.filter_by(user_id=user_id).all()
+    for order in user_orders:
+        # Delete order items for each order
+        OrderItem.query.filter_by(order_id=order.id).delete()
+    # Then delete the orders
+    Order.query.filter_by(user_id=user_id).delete()
+    
+    # 8. Handle products - mark as deleted or reassign
+    # For simplicity, we'll just delete them here
+    # In a real app, you might want to handle this differently
+    Product.query.filter_by(seller_id=user_id).delete()
+    
+    # 9. Finally, delete the user
+    User.query.filter_by(id=user_id).delete()
+    
+    # Commit all changes
+    db.session.commit()
+    
+    flash('Your account has been permanently deleted.', 'success')
     return redirect(url_for('index'))
 
 

@@ -105,31 +105,49 @@
                                 <h5 class="mb-0">Login History</h5>
                             </div>
                             <div class="card-body">
-                                <p class="text-muted">Review recent login activity on your account.</p>
+                                <p class="text-muted">Review recent login activity on your account. We'll notify you of any suspicious activity.</p>
                                 
                                 <div class="table-responsive">
                                     <table class="table table-hover">
                                         <thead>
                                             <tr>
                                                 <th>Date/Time</th>
-                                                <th>Device</th>
+                                                <th>Device/Browser</th>
                                                 <th>Location</th>
+                                                <th>IP Address</th>
                                                 <th>Status</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr>
-                                                <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') }}</td>
-                                                <td>Current device</td>
-                                                <td>--</td>
-                                                <td><span class="badge bg-success">Success</span></td>
-                                            </tr>
+                                            {% if login_history %}
+                                                {% for login in login_history %}
+                                                    <tr>
+                                                        <td>{{ login.login_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                                        <td>{{ login.user_agent }}</td>
+                                                        <td>{{ login.location or 'Unknown' }}</td>
+                                                        <td>{{ login.ip_address }}</td>
+                                                        <td>
+                                                            {% if login.success %}
+                                                                <span class="badge bg-success">Success</span>
+                                                            {% else %}
+                                                                <span class="badge bg-danger">Failed</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            {% else %}
+                                                <tr>
+                                                    <td colspan="5" class="text-center">No login history available</td>
+                                                </tr>
+                                            {% endif %}
                                         </tbody>
                                     </table>
                                 </div>
                                 
-                                <div class="alert alert-info mt-3">
-                                    <i class="bi bi-info-circle me-2"></i> Detailed login history will be available in a future update.
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                                    <a href="{{ url_for('view_full_login_history') }}" class="btn btn-outline-primary">
+                                        <i class="bi bi-clock-history me-1"></i> View Full Login History
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -142,20 +160,59 @@
                             <div class="card-body">
                                 <p class="text-muted">Set up recovery options in case you lose access to your account.</p>
                                 
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle me-2"></i> Account recovery options will be available in a future update.
+                                <div class="mb-4">
+                                    <h6 class="mb-3">Recovery Email</h6>
+                                    <div class="input-group mb-2">
+                                        <input type="email" class="form-control" id="recovery_email" name="recovery_email" value="{{ user.recovery_email or '' }}" placeholder="backup-email@example.com">
+                                        <button class="btn btn-outline-primary" type="submit" name="update_recovery_email">Update</button>
+                                    </div>
+                                    <div class="form-text">This email will be used to verify your identity if you can't access your primary email.</div>
                                 </div>
                                 
-                                <div class="d-grid gap-2 mb-3">
-                                    <button type="button" class="btn btn-outline-secondary" disabled>
-                                        <i class="bi bi-envelope me-2"></i> Set Recovery Email
-                                    </button>
+                                <div class="mb-4">
+                                    <h6 class="mb-3">Recovery Phone Number</h6>
+                                    <div class="input-group mb-2">
+                                        <input type="tel" class="form-control" id="recovery_phone" name="recovery_phone" value="{{ user.recovery_phone or '' }}" placeholder="+1 (555) 123-4567">
+                                        <button class="btn btn-outline-primary" type="submit" name="update_recovery_phone">Update</button>
+                                    </div>
+                                    <div class="form-text">We'll send a verification code to this number if you need to recover your account.</div>
                                 </div>
                                 
-                                <div class="d-grid gap-2">
-                                    <button type="button" class="btn btn-outline-secondary" disabled>
-                                        <i class="bi bi-phone me-2"></i> Set Recovery Phone Number
-                                    </button>
+                                <div class="mb-4">
+                                    <h6 class="mb-3">Security Questions</h6>
+                                    <p class="text-muted small">Set up security questions that only you can answer. These will help verify your identity.</p>
+                                    
+                                    <div class="mb-3">
+                                        <label for="security_question1" class="form-label">Question 1</label>
+                                        <select class="form-select mb-2" id="security_question1" name="security_question1">
+                                            <option value="" {% if not user.security_question1 %}selected{% endif %}>-- Select a question --</option>
+                                            <option value="first_pet" {% if user.security_question1 == 'first_pet' %}selected{% endif %}>What was the name of your first pet?</option>
+                                            <option value="mother_maiden" {% if user.security_question1 == 'mother_maiden' %}selected{% endif %}>What is your mother's maiden name?</option>
+                                            <option value="birth_city" {% if user.security_question1 == 'birth_city' %}selected{% endif %}>In what city were you born?</option>
+                                            <option value="first_school" {% if user.security_question1 == 'first_school' %}selected{% endif %}>What was the name of your first school?</option>
+                                            <option value="childhood_friend" {% if user.security_question1 == 'childhood_friend' %}selected{% endif %}>What is the name of your childhood best friend?</option>
+                                        </select>
+                                        <input type="password" class="form-control" id="security_answer1" name="security_answer1" placeholder="Your answer" {% if user.security_answer1 %}value="********"{% endif %}>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="security_question2" class="form-label">Question 2</label>
+                                        <select class="form-select mb-2" id="security_question2" name="security_question2">
+                                            <option value="" {% if not user.security_question2 %}selected{% endif %}>-- Select a question --</option>
+                                            <option value="favorite_teacher" {% if user.security_question2 == 'favorite_teacher' %}selected{% endif %}>Who was your favorite teacher?</option>
+                                            <option value="first_car" {% if user.security_question2 == 'first_car' %}selected{% endif %}>What was your first car?</option>
+                                            <option value="street_grew_up" {% if user.security_question2 == 'street_grew_up' %}selected{% endif %}>What street did you grow up on?</option>
+                                            <option value="first_job" {% if user.security_question2 == 'first_job' %}selected{% endif %}>What was your first job?</option>
+                                            <option value="favorite_vacation" {% if user.security_question2 == 'favorite_vacation' %}selected{% endif %}>What is your favorite vacation spot?</option>
+                                        </select>
+                                        <input type="password" class="form-control" id="security_answer2" name="security_answer2" placeholder="Your answer" {% if user.security_answer2 %}value="********"{% endif %}>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <button type="submit" name="update_security_questions" class="btn btn-primary">
+                                            <i class="bi bi-shield-check me-1"></i> Save Security Questions
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

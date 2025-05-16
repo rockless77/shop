@@ -83,20 +83,36 @@
                                 <h5 class="mb-0">Activity Privacy</h5>
                             </div>
                             <div class="card-body">
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle me-2"></i> These settings will be available in a future update.
+                                <div class="mb-3">
+                                    <label for="profile_visibility" class="form-label">Profile Visibility</label>
+                                    <select class="form-select" id="profile_visibility" name="profile_visibility">
+                                        <option value="public" {% if user.profile_visibility == 'public' %}selected{% endif %}>Public - Anyone can view your profile</option>
+                                        <option value="registered" {% if user.profile_visibility == 'registered' %}selected{% endif %}>Registered Users Only</option>
+                                        <option value="private" {% if user.profile_visibility == 'private' %}selected{% endif %}>Private - Only you can view your profile</option>
+                                    </select>
+                                    <div class="form-text">Control who can view your profile information</div>
                                 </div>
                                 
-                                <div class="form-check form-switch mb-3 disabled">
-                                    <input class="form-check-input" type="checkbox" id="show_bid_activity" disabled>
+                                <div class="mb-3">
+                                    <label for="activity_visibility" class="form-label">Activity Visibility</label>
+                                    <select class="form-select" id="activity_visibility" name="activity_visibility">
+                                        <option value="public" {% if user.activity_visibility == 'public' %}selected{% endif %}>Public - Anyone can see your activity</option>
+                                        <option value="registered" {% if user.activity_visibility == 'registered' %}selected{% endif %}>Registered Users Only</option>
+                                        <option value="private" {% if user.activity_visibility == 'private' %}selected{% endif %}>Private - Only you can see your activity</option>
+                                    </select>
+                                    <div class="form-text">Control who can view your bidding and purchase activity</div>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="show_bid_activity" name="show_bid_activity" {% if user.show_bid_activity %}checked{% endif %}>
                                     <label class="form-check-label" for="show_bid_activity">
                                         Show My Bid Activity
                                     </label>
                                     <div class="text-muted small">If enabled, other users can see which auctions you've bid on</div>
                                 </div>
                                 
-                                <div class="form-check form-switch mb-3 disabled">
-                                    <input class="form-check-input" type="checkbox" id="show_won_auctions" disabled>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="show_won_auctions" name="show_won_auctions" {% if user.show_won_auctions %}checked{% endif %}>
                                     <label class="form-check-label" for="show_won_auctions">
                                         Show Auctions I've Won
                                     </label>
@@ -121,10 +137,10 @@
                                 </div>
                                 
                                 <div class="d-grid gap-2">
-                                    <button type="button" class="btn btn-outline-danger" disabled>
+                                    <a href="#" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
                                         <i class="bi bi-trash me-2"></i> Delete My Account
-                                    </button>
-                                    <small class="text-muted">Permanently delete your account and all associated data (Coming soon)</small>
+                                    </a>
+                                    <small class="text-muted">Permanently delete your account and all associated data</small>
                                 </div>
                             </div>
                         </div>
@@ -136,6 +152,44 @@
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Delete Account Confirmation Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteAccountModalLabel">Delete Account</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Warning:</strong> This action cannot be undone!
+                </div>
+                <p>Are you sure you want to delete your account? This will permanently remove all your data, including:</p>
+                <ul>
+                    <li>Your profile information</li>
+                    <li>Your auction listings</li>
+                    <li>Your bid history</li>
+                    <li>Your order history</li>
+                    <li>Your payment methods</li>
+                    <li>Your shipping addresses</li>
+                </ul>
+                <form id="deleteAccountForm" method="POST" action="{{ url_for('delete_account') }}">
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Please enter your password to confirm:</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="deleteAccountForm" class="btn btn-danger">
+                    <i class="bi bi-trash me-1"></i> Permanently Delete Account
+                </button>
             </div>
         </div>
     </div>

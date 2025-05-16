@@ -42,8 +42,8 @@
                     <div>
                         <img src="{{ url_for('static', filename='img/default_profile.jpg') }}" 
                              class="rounded-circle me-2" width="30" height="30" 
-                             alt="{{ ticket.user.username }}">
-                        <strong>{{ ticket.user.username }}</strong>
+                             alt="{{ ticket.creator.username }}">
+                        <strong>{{ ticket.creator.username }}</strong>
                         <small class="text-muted ms-2">(Original Message)</small>
                     </div>
                     <small class="text-muted">{{ ticket.created_at.strftime('%b %d, %Y %H:%M') }}</small>
