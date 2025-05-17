@@ -1,7 +1,28 @@
-Flask
-SQLAlchemy
-Flask-Login
-Flask-WTF
-email-validator
+# ShopEasy Auction System Requirements
+# Install these packages using: pip install -r requirements.txt
+
+# Core Framework
+Flask==2.2.3
+Werkzeug==2.2.3
+Jinja2==3.1.2
+
+# Database
+SQLAlchemy==2.0.4
+Flask-SQLAlchemy==3.0.3
+
+# Authentication and Forms
+Flask-Login==0.6.2
+Flask-WTF==1.1.1
+WTForms==3.0.1
+email-validator==2.0.0
+
+# Image Processing
 Pillow>=9.0.0
-Flask-APScheduler
+
+# Scheduling
+Flask-APScheduler==1.12.3
+APScheduler==3.9.1
+
+# Additional Utilities
+python-dotenv==1.0.0
+UUID==1.30
