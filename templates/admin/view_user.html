@@ -1,0 +1,247 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}View User: {{ user.username }}{% endblock %}
+
+{% block admin_content %}
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">User Information</h5>
+            <div>
+                {% if user.is_admin %}
+                <span class="badge bg-danger">Admin</span>
+                {% else %}
+                <span class="badge bg-success">Regular User</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 text-center mb-4">
+                <img src="{{ url_for('static', filename='uploads/profiles/' + user.profile_image) }}" alt="{{ user.username }}" class="img-fluid rounded-circle mb-3" style="max-width: 150px;">
+                <h4>{{ user.get_full_name() }}</h4>
+                <p class="text-muted">@{{ user.username }}</p>
+                
+                {% if not user.is_admin %}
+                <form action="{{ url_for('admin_toggle_admin', user_id=user.id) }}" method="POST">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="bi bi-shield-fill"></i> Make Admin
+                    </button>
+                </form>
+                {% elif current_user.id != user.id %}
+                <form action="{{ url_for('admin_toggle_admin', user_id=user.id) }}" method="POST">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-shield"></i> Remove Admin
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-8">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Email:</strong> {{ user.email }}</p>
+                        <p><strong>Phone:</strong> {{ user.phone_number or 'Not provided' }}</p>
+                        <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Registered:</strong> {{ user.account_created.strftime('%Y-%m-%d %H:%M') }}</p>
+                        <p><strong>Last Login:</strong> {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}</p>
+                        <p><strong>Last Password Change:</strong> {{ user.last_password_change.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Bio</h6>
+                    <p>{{ user.bio or 'No bio provided.' }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Default Address</h6>
+                    <p>{{ user.get_address() or 'No default address set.' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">User's Products</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Price</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in user.products %}
+                            <tr>
+                                <td>{{ product.id }}</td>
+                                <td>
+                                    <a href="{{ url_for('admin_view_product', product_id=product.id) }}">{{ product.name }}</a>
+                                </td>
+                                <td>${{ product.price }}</td>
+                                <td>
+                                    {% if product.is_auction %}
+                                    <span class="badge bg-info">Auction</span>
+                                    {% else %}
+                                    <span class="badge bg-primary">Fixed Price</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('admin_view_product', product_id=product.id) }}" class="btn btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ product.id }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Delete Product Modal -->
+                                    <div class="modal fade" id="deleteProductModal{{ product.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Delete Product</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Are you sure you want to delete this product?</p>
+                                                    <p><strong>Name:</strong> {{ product.name }}</p>
+                                                    <p><strong>Price:</strong> ${{ product.price }}</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <form action="{{ url_for('admin_delete_product', product_id=product.id) }}" method="POST">
+                                                        <button type="submit" class="btn btn-danger">Delete Product</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">No products found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Support Tickets</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Subject</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in user.tickets %}
+                            <tr>
+                                <td>{{ ticket.id }}</td>
+                                <td>
+                                    <a href="{{ url_for('admin_view_ticket', ticket_id=ticket.id) }}">{{ ticket.subject }}</a>
+                                </td>
+                                <td>
+                                    {% if ticket.status == 'open' %}
+                                    <span class="badge bg-danger">Open</span>
+                                    {% elif ticket.status == 'in_progress' %}
+                                    <span class="badge bg-warning">In Progress</span>
+                                    {% elif ticket.status == 'resolved' %}
+                                    <span class="badge bg-success">Resolved</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Closed</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ ticket.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <a href="{{ url_for('admin_view_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">No support tickets found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_user.id != user.id %}
+<div class="card mb-4">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">Danger Zone</h5>
+    </div>
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5>Delete User Account</h5>
+                <p class="mb-0">This action cannot be undone. All user data, listings, and history will be permanently deleted.</p>
+            </div>
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal">
+                Delete User
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this user?</p>
+                <p><strong>Username:</strong> {{ user.username }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i> This action cannot be undone. All user data, listings, and history will be permanently deleted.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('admin_delete_user', user_id=user.id) }}" method="POST">
+                    <button type="submit" class="btn btn-danger">Delete User</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

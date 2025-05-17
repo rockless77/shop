@@ -1,11 +1,13 @@
 import os
 import uuid
+from functools import wraps
 from werkzeug.utils import secure_filename
 from flask import (
     Flask, render_template, request, redirect, 
     url_for, session, flash, send_from_directory,
-    jsonify
+    jsonify, abort
 )
+from image_utils import save_product_image, save_profile_image, validate_product_images
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -24,6 +26,13 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'supersecretkey'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///marketplace.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Add Jinja filters
+@app.template_filter('nl2br')
+def nl2br(value):
+    if value:
+        return value.replace('\n', '<br>')
+    return ''
 
 # Initialize SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -61,6 +70,17 @@ def handle_leave_auction(data):
         room = f'auction_{product_id}'
         leave_room(room)
 
+# ─── Admin Decorator ───────────────────────────────────────────────────────────────
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_admin:
+            flash('You do not have permission to access this page', 'danger')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/api/auction/<int:product_id>/time')
 def get_auction_time(product_id):
     product = Product.query.get_or_404(product_id)
@@ -77,6 +97,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(150), unique=True, nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
     
     # Profile Information
     first_name = db.Column(db.String(100))
@@ -393,13 +414,10 @@ def profile_settings():
         if 'profile_image' in request.files:
             file = request.files['profile_image']
             if file and file.filename != '':
-                # Generate secure filename
-                filename = secure_filename(file.filename)
-                # Append timestamp to prevent duplicate filenames
-                filename = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{filename}"
-                # Save the file
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'profiles', filename))
-                current_user.profile_image = filename
+                # Save and process the profile image
+                filename = save_profile_image(file, current_user.id)
+                if filename:
+                    current_user.profile_image = filename
         
         # Update theme and language preferences
         current_user.theme = request.form.get('theme')
@@ -1064,7 +1082,7 @@ def save_uploaded_file(file, product_id):
         return filename
     return None
 
-@app.route('/uploads/<filename>')
+@app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
@@ -1077,6 +1095,14 @@ def create_auction():
         start_price = float(request.form['start_price'])
         min_increment = float(request.form.get('min_increment', 1.0))
         duration_days = int(request.form.get('duration_days', 7))
+        
+        # Validate images (require 3-12 images)
+        files = request.files.getlist('images')
+        valid, message = validate_product_images(files)
+        
+        if not valid:
+            flash(message, 'danger')
+            return render_template('create_auction.html')
         
         auction_end = datetime.utcnow() + timedelta(days=duration_days)
         
@@ -1096,12 +1122,11 @@ def create_auction():
         db.session.commit()
         
         # Handle image uploads
-        files = request.files.getlist('images')
         is_primary = True  # First image will be primary
         
         for file in files:
             if file.filename:
-                filename = save_uploaded_file(file, product.id)
+                filename = save_product_image(file, product.id, is_primary)
                 if filename:
                     image = ProductImage(
                         filename=filename,
@@ -1283,14 +1308,23 @@ def add_to_wishlist(product_id):
     # Redirect back to the previous page
     return redirect(request.referrer or url_for('list_auctions'))
 
-@app.route('/add_product', methods=['GET','POST'])
+@app.route('/add_product', methods=['GET', 'POST'])
 @login_required
 def add_product():
     if request.method == 'POST':
-        name        = request.form['name']
-        desc        = request.form['description']
-        price       = float(request.form['price'])
-        # now tie it to the logged-in user:
+        name = request.form['name']
+        desc = request.form['description']
+        price = float(request.form['price'])
+        
+        # Validate images (require 3-12 images)
+        files = request.files.getlist('images')
+        valid, message = validate_product_images(files)
+        
+        if not valid:
+            flash(message, 'danger')
+            return render_template('add_product.html')
+        
+        # Create the product
         new_prod = Product(
             name=name,
             description=desc,
@@ -1298,6 +1332,23 @@ def add_product():
             seller_id=current_user.id
         )
         db.session.add(new_prod)
+        db.session.commit()
+        
+        # Handle image uploads
+        is_primary = True  # First image will be primary
+        
+        for file in files:
+            if file.filename:
+                filename = save_product_image(file, new_prod.id, is_primary)
+                if filename:
+                    image = ProductImage(
+                        filename=filename,
+                        product_id=new_prod.id,
+                        is_primary=is_primary
+                    )
+                    db.session.add(image)
+                    is_primary = False  # Subsequent images are not primary
+        
         db.session.commit()
         flash('Your item is now listed!', 'success')
         return redirect(url_for('index'))
@@ -1596,9 +1647,260 @@ def close_ticket(ticket_id):
     db.session.commit()
     
     flash('Ticket has been closed', 'success')
-    return redirect(url_for('support_tickets'))
+    return redirect(url_for('admin_support_tickets'))
 
 
+# ─── Admin Routes ───────────────────────────────────────────────────────────────
+
+@app.route('/admin')
+@login_required
+@admin_required
+def admin_dashboard():
+    # Get counts for dashboard
+    open_tickets_count = SupportTicket.query.filter_by(status='open').count()
+    users_count = User.query.count()
+    products_count = Product.query.count()
+    
+    # Get recent tickets and users for dashboard
+    recent_tickets = SupportTicket.query.order_by(SupportTicket.created_at.desc()).limit(5).all()
+    recent_users = User.query.order_by(User.account_created.desc()).limit(5).all()
+    
+    return render_template('admin/dashboard.html',
+                          open_tickets_count=open_tickets_count,
+                          users_count=users_count,
+                          products_count=products_count,
+                          recent_tickets=recent_tickets,
+                          recent_users=recent_users)
+
+@app.route('/admin/support-tickets')
+@login_required
+@admin_required
+def admin_support_tickets():
+    # Get filter parameters
+    status = request.args.get('status')
+    priority = request.args.get('priority')
+    search = request.args.get('search')
+    
+    # Base query
+    query = SupportTicket.query
+    
+    # Apply filters
+    if status:
+        query = query.filter(SupportTicket.status == status)
+    if priority:
+        query = query.filter(SupportTicket.priority == priority)
+    if search:
+        query = query.filter(
+            or_(
+                SupportTicket.subject.ilike(f'%{search}%'),
+                User.username.ilike(f'%{search}%')
+            )
+        ).join(User, SupportTicket.user_id == User.id)
+    
+    # Get tickets
+    tickets = query.order_by(SupportTicket.created_at.desc()).all()
+    
+    return render_template('admin/support_tickets.html', tickets=tickets)
+
+@app.route('/admin/support-tickets/<int:ticket_id>')
+@login_required
+@admin_required
+def admin_view_ticket(ticket_id):
+    ticket = SupportTicket.query.get_or_404(ticket_id)
+    return render_template('admin/view_ticket.html', ticket=ticket)
+
+@app.route('/admin/support-tickets/<int:ticket_id>/reply', methods=['POST'])
+@login_required
+@admin_required
+def admin_reply_ticket(ticket_id):
+    ticket = SupportTicket.query.get_or_404(ticket_id)
+    
+    message = request.form.get('message')
+    status = request.form.get('status', 'in_progress')
+    
+    if not message:
+        flash('Reply message cannot be empty', 'danger')
+        return redirect(url_for('admin_view_ticket', ticket_id=ticket_id))
+    
+    # Update the ticket
+    ticket.message = f"{ticket.message}\n\n--- Admin Reply ({datetime.utcnow().strftime('%Y-%m-%d %H:%M')}) ---\n{message}"
+    ticket.status = status
+    ticket.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    
+    flash('Your reply has been sent', 'success')
+    return redirect(url_for('admin_view_ticket', ticket_id=ticket_id))
+
+@app.route('/admin/support-tickets/<int:ticket_id>/close', methods=['POST'])
+@login_required
+@admin_required
+def admin_close_ticket(ticket_id):
+    ticket = SupportTicket.query.get_or_404(ticket_id)
+    ticket.status = 'closed'
+    ticket.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    flash('Ticket has been closed', 'success')
+    return redirect(url_for('admin_support_tickets'))
+
+# Admin reopen ticket route moved to admin routes section
+
+@app.route('/admin/users')
+@login_required
+@admin_required
+def admin_users():
+    # Get filter parameters
+    search = request.args.get('search')
+    sort = request.args.get('sort', 'newest')
+    admin_filter = request.args.get('admin')
+    
+    # Base query
+    query = User.query
+    
+    # Apply filters
+    if search:
+        query = query.filter(
+            or_(
+                User.username.ilike(f'%{search}%'),
+                User.email.ilike(f'%{search}%'),
+                User.first_name.ilike(f'%{search}%'),
+                User.last_name.ilike(f'%{search}%')
+            )
+        )
+    
+    if admin_filter:
+        is_admin = admin_filter == '1'
+        query = query.filter(User.is_admin == is_admin)
+    
+    # Apply sorting
+    if sort == 'newest':
+        query = query.order_by(User.account_created.desc())
+    elif sort == 'oldest':
+        query = query.order_by(User.account_created.asc())
+    elif sort == 'username':
+        query = query.order_by(User.username.asc())
+    elif sort == 'email':
+        query = query.order_by(User.email.asc())
+    
+    # Get users
+    users = query.all()
+    
+    return render_template('admin/users.html', users=users)
+
+@app.route('/admin/users/<int:user_id>')
+@login_required
+@admin_required
+def admin_view_user(user_id):
+    user = User.query.get_or_404(user_id)
+    return render_template('admin/view_user.html', user=user)
+
+@app.route('/admin/users/<int:user_id>/toggle-admin', methods=['POST'])
+@login_required
+@admin_required
+def admin_toggle_admin(user_id):
+    user = User.query.get_or_404(user_id)
+    
+    # Prevent removing admin status from yourself
+    if user.id == current_user.id and user.is_admin:
+        flash('You cannot remove your own admin privileges', 'danger')
+        return redirect(url_for('admin_view_user', user_id=user_id))
+    
+    user.is_admin = not user.is_admin
+    db.session.commit()
+    
+    action = 'granted' if user.is_admin else 'removed'
+    flash(f'Admin privileges {action} for {user.username}', 'success')
+    return redirect(url_for('admin_view_user', user_id=user_id))
+
+@app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_user(user_id):
+    user = User.query.get_or_404(user_id)
+    
+    # Prevent deleting yourself
+    if user.id == current_user.id:
+        flash('You cannot delete your own account from the admin panel', 'danger')
+        return redirect(url_for('admin_view_user', user_id=user_id))
+    
+    username = user.username
+    
+    # Delete user's products, bids, orders, etc.
+    # This relies on cascade delete in the database or explicit deletion here
+    
+    db.session.delete(user)
+    db.session.commit()
+    
+    flash(f'User {username} has been deleted', 'success')
+    return redirect(url_for('admin_users'))
+
+@app.route('/admin/products')
+@login_required
+@admin_required
+def admin_products():
+    # Get filter parameters
+    search = request.args.get('search')
+    product_type = request.args.get('type')
+    status = request.args.get('status')
+    sort = request.args.get('sort', 'newest')
+    
+    # Base query
+    query = Product.query
+    
+    # Apply filters
+    if search:
+        query = query.filter(Product.name.ilike(f'%{search}%'))
+    
+    if product_type:
+        if product_type == 'auction':
+            query = query.filter(Product.is_auction == True)
+        elif product_type == 'fixed':
+            query = query.filter(Product.is_auction == False)
+    
+    if status:
+        query = query.filter(Product.status == status)
+    
+    # Apply sorting
+    if sort == 'newest':
+        query = query.order_by(Product.id.desc())
+    elif sort == 'oldest':
+        query = query.order_by(Product.id.asc())
+    elif sort == 'price_high':
+        query = query.order_by(Product.price.desc())
+    elif sort == 'price_low':
+        query = query.order_by(Product.price.asc())
+    elif sort == 'name':
+        query = query.order_by(Product.name.asc())
+    
+    # Get products
+    products = query.all()
+    
+    return render_template('admin/products.html', products=products)
+
+@app.route('/admin/products/<int:product_id>')
+@login_required
+@admin_required
+def admin_view_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    return render_template('admin/view_product.html', product=product)
+
+@app.route('/admin/products/<int:product_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    product_name = product.name
+    
+    # Delete the product
+    db.session.delete(product)
+    db.session.commit()
+    
+    flash(f'Product "{product_name}" has been deleted', 'success')
+    return redirect(url_for('admin_products'))
+
+
+# Route to serve uploaded files has been consolidated with the existing route at line 1084
 
 # ─── Run ────────────────────────────────────────────────────────────────────────
 

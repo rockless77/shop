@@ -10,23 +10,34 @@
             <div class="card mb-4">
                 <div class="card-body text-center bg-light p-3">
                     {% set primary_image = product.images|selectattr('is_primary', 'eq', true)|first %}
-                    <div class="main-image mb-3">
-                        {% if primary_image %}
-                            <img src="{{ url_for('uploaded_file', filename=primary_image.filename) }}" 
-                                 class="img-fluid" 
-                                 alt="{{ product.name }}"
-                                 style="max-height: 400px; width: auto; object-fit: contain;">
+                    <div class="main-image mb-3" style="position: relative; width: 100%; height: 400px; background-color: #f8f9fa;">
+                        {% if product.images %}
+                            {% set primary_image = None %}
+                            {% for image in product.images %}
+                                {% if image.is_primary %}
+                                    {% set primary_image = image %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if primary_image %}
+                                <img src="{{ url_for('static', filename='uploads/products/' + primary_image.filename) }}" 
+                                     alt="{{ product.name }}"
+                                     style="position: absolute; max-width: 90%; max-height: 90%; top: 50%; left: 50%; transform: translate(-50%, -50%); object-fit: contain;">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='uploads/products/' + product.images[0].filename) }}" 
+                                     alt="{{ product.name }}"
+                                     style="position: absolute; max-width: 90%; max-height: 90%; top: 50%; left: 50%; transform: translate(-50%, -50%); object-fit: contain;">
+                            {% endif %}
                         {% else %}
-                            <img src="{{ url_for('static', filename='placeholder-product.png') }}" 
-                                 class="img-fluid" 
+                            <img src="{{ url_for('static', filename='img/product-placeholder.svg') }}" 
                                  alt="{{ product.name }}"
-                                 style="max-height: 400px; width: auto; object-fit: contain;">
+                                 style="position: absolute; max-width: 90%; max-height: 90%; top: 50%; left: 50%; transform: translate(-50%, -50%); object-fit: contain;">
                         {% endif %}
                     </div>
                     {% if product.images|length > 1 %}
                     <div class="thumbnail-gallery d-flex justify-content-center gap-2 mt-3">
                         {% for image in product.images %}
-                            <img src="{{ url_for('uploaded_file', filename=image.filename) }}" 
+                            <img src="{{ url_for('static', filename='uploads/products/' + image.filename) }}" 
                                  class="img-thumbnail" 
                                  style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;"
                                  onclick="document.querySelector('.main-image img').src = this.src"
@@ -267,20 +278,62 @@
     }
     
     function updateBidHistory(data) {
-        var bidHistory = document.querySelector('.bid-history');
-        if (!bidHistory) { return; }
+        // Get the bid history table body
+        var bidHistoryTable = document.querySelector('table.table tbody');
+        if (!bidHistoryTable) {
+            // If no table exists yet (first bid), refresh the page to show it
+            location.reload();
+            return;
+        }
         
-        var newBid = document.createElement('div');
-        newBid.className = 'alert alert-info mb-2';
+        // Check if this bid already exists in the table to avoid duplicates
+        var existingRows = bidHistoryTable.querySelectorAll('tr');
+        for (var i = 0; i < existingRows.length; i++) {
+            var amountCell = existingRows[i].querySelector('td:nth-child(2)');
+            var timeCell = existingRows[i].querySelector('td:nth-child(3)');
+            
+            // If this exact bid amount and time already exists, don't add it again
+            if (amountCell && timeCell && 
+                amountCell.textContent === '$' + data.current_bid.toFixed(2) && 
+                timeCell.textContent.includes(data.bid_time)) {
+                return; // Skip adding duplicate
+            }
+        }
         
-        var bidderName = data.user_name || 'Anonymous';
-        var bidAmount = formatCurrency(data.current_bid);
-        var bidTime = data.bid_time || '';
+        // Remove 'Highest' badge from previous highest bid
+        var previousHighestBadge = bidHistoryTable.querySelector('.badge.bg-success');
+        if (previousHighestBadge) {
+            previousHighestBadge.remove();
+        }
         
-        newBid.innerHTML = '<strong>' + bidderName + '</strong> bid ' + bidAmount + 
-            ' <small class="text-muted ms-2">' + bidTime + '</small>';
+        // Create new row for the new bid
+        var newRow = document.createElement('tr');
         
-        bidHistory.insertBefore(newBid, bidHistory.firstChild);
+        // Bidder name cell
+        var nameCell = document.createElement('td');
+        nameCell.innerHTML = data.user_name || 'Anonymous';
+        if (data.is_current_user) {
+            nameCell.innerHTML += ' <span class="badge bg-primary">You</span>';
+        }
+        newRow.appendChild(nameCell);
+        
+        // Bid amount cell
+        var amountCell = document.createElement('td');
+        amountCell.textContent = '$' + data.current_bid.toFixed(2);
+        newRow.appendChild(amountCell);
+        
+        // Date cell
+        var dateCell = document.createElement('td');
+        dateCell.textContent = data.bid_time || new Date().toLocaleString();
+        newRow.appendChild(dateCell);
+        
+        // Status cell
+        var statusCell = document.createElement('td');
+        statusCell.innerHTML = '<span class="badge bg-success">Highest</span>';
+        newRow.appendChild(statusCell);
+        
+        // Insert the new row at the top of the table
+        bidHistoryTable.insertBefore(newRow, bidHistoryTable.firstChild);
     }
     
     function updateBidForm(data) {

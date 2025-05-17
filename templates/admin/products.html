@@ -1,0 +1,169 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Products & Auctions Management{% endblock %}
+
+{% block admin_content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Filter Products</h5>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('admin_products') }}" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" placeholder="Search by name" value="{{ request.args.get('search', '') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="type" class="form-label">Type</label>
+                        <select class="form-select" id="type" name="type">
+                            <option value="">All Types</option>
+                            <option value="auction" {% if request.args.get('type') == 'auction' %}selected{% endif %}>Auctions</option>
+                            <option value="fixed" {% if request.args.get('type') == 'fixed' %}selected{% endif %}>Fixed Price</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Statuses</option>
+                            <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
+                            <option value="sold" {% if request.args.get('status') == 'sold' %}selected{% endif %}>Sold</option>
+                            <option value="expired" {% if request.args.get('status') == 'expired' %}selected{% endif %}>Expired</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="sort" class="form-label">Sort By</label>
+                        <select class="form-select" id="sort" name="sort">
+                            <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>Newest First</option>
+                            <option value="oldest" {% if request.args.get('sort') == 'oldest' %}selected{% endif %}>Oldest First</option>
+                            <option value="price_high" {% if request.args.get('sort') == 'price_high' %}selected{% endif %}>Price (High to Low)</option>
+                            <option value="price_low" {% if request.args.get('sort') == 'price_low' %}selected{% endif %}>Price (Low to High)</option>
+                            <option value="name" {% if request.args.get('sort') == 'name' %}selected{% endif %}>Name (A-Z)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Products</h5>
+            <span class="badge bg-primary">{{ products|length }} Products</span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Seller</th>
+                        <th>Price/Bid</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>{{ product.id }}</td>
+                        <td>
+                            {% if product.images %}
+                            <img src="{{ url_for('uploaded_file', filename=product.images[0].filename) }}" alt="{{ product.name }}" class="img-thumbnail" style="max-width: 50px;">
+                            {% else %}
+                            <div class="bg-light text-center p-2" style="width: 50px; height: 50px;">
+                                <i class="bi bi-image text-muted"></i>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('admin_view_product', product_id=product.id) }}">{{ product.name }}</a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('admin_view_user', user_id=product.seller_id) }}">{{ product.seller.username }}</a>
+                        </td>
+                        <td>
+                            {% if product.is_auction %}
+                            ${{ product.current_bid or product.start_price }}
+                            {% else %}
+                            ${{ product.price }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if product.is_auction %}
+                            <span class="badge bg-info">Auction</span>
+                            {% else %}
+                            <span class="badge bg-primary">Fixed Price</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if product.status == 'active' %}
+                            <span class="badge bg-success">Active</span>
+                            {% elif product.status == 'sold' %}
+                            <span class="badge bg-warning">Sold</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Expired</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('admin_view_product', product_id=product.id) }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ product.id }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Delete Product Modal -->
+                            <div class="modal fade" id="deleteProductModal{{ product.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Delete Product</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete this product?</p>
+                                            <p><strong>Name:</strong> {{ product.name }}</p>
+                                            <p><strong>Seller:</strong> {{ product.seller.username }}</p>
+                                            {% if product.is_auction %}
+                                            <p><strong>Current Bid:</strong> ${{ product.current_bid or product.start_price }}</p>
+                                            {% else %}
+                                            <p><strong>Price:</strong> ${{ product.price }}</p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('admin_delete_product', product_id=product.id) }}" method="POST">
+                                                <button type="submit" class="btn btn-danger">Delete Product</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">No products found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

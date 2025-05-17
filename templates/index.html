@@ -1,24 +1,75 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>Welcome to Shopeasy</h1>
+<div class="container mt-4">
+  <h1 class="mb-4">Welcome to Shopeasy</h1>
 
-<h2>Products</h2>
-<div class="products">
+  <h2 class="mb-3">Products</h2>
+  <div class="row row-cols-1 row-cols-md-3 g-4">
     {% for product in products %}
-    <div>
-      <h2>{{ product.name }}</h2>
-      <p>{{ product.description }}</p>
-      <p>${{ product.price }}</p>
-  
-      <!-- Add to cart form -->
-      <form method="POST" action="{{ url_for('add_to_cart', product_id=product.id) }}">
-        <button type="submit">Add to Cart</button>
-      </form>
-      <form method="POST" action="{{ url_for('add_to_wishlist', product_id=product.id) }}">
-    <button type="submit">Add to Wishlist</button>
-</form>
-
+    <div class="col">
+      <div class="card h-100">
+        {% set primary_image = None %}
+        {% for image in product.images %}
+          {% if image.is_primary %}
+            {% set primary_image = image %}
+          {% endif %}
+        {% endfor %}
+        
+        <div class="product-image-container">
+          {% if product.images %}
+            {% set primary_image = None %}
+            {% for image in product.images %}
+              {% if image.is_primary %}
+                {% set primary_image = image %}
+              {% endif %}
+            {% endfor %}
+            
+            {% if primary_image %}
+              <img src="{{ url_for('static', filename='uploads/products/' + primary_image.filename) }}" 
+                   alt="{{ product.name }}" class="product-image">
+            {% else %}
+              <img src="{{ url_for('static', filename='uploads/products/' + product.images[0].filename) }}" 
+                   alt="{{ product.name }}" class="product-image">
+            {% endif %}
+          {% else %}
+            <img src="{{ url_for('static', filename='img/product-placeholder.svg') }}" 
+                 alt="{{ product.name }}" class="product-image">
+          {% endif %}
+        </div>
+        
+        <div class="card-body">
+          <h5 class="card-title">{{ product.name }}</h5>
+          <p class="card-text text-truncate">{{ product.description }}</p>
+          <p class="card-text fw-bold">${{ '%.2f'|format(product.price) }}</p>
+          
+          <div class="d-flex justify-content-between">
+            <form method="POST" action="{{ url_for('add_to_cart', product_id=product.id) }}">
+              <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-cart-plus"></i> Add to Cart
+              </button>
+            </form>
+            <form method="POST" action="{{ url_for('add_to_wishlist', product_id=product.id) }}">
+              <button type="submit" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-heart"></i> Wishlist
+              </button>
+            </form>
+          </div>
+        </div>
+        
+        {% if product.is_auction %}
+        <div class="card-footer bg-primary text-white">
+          <small>
+            <i class="bi bi-hammer"></i> Auction
+            {% if product.time_left %}
+              - Ends in {{ product.time_left.days }}d {{ (product.time_left.seconds // 3600) }}h
+            {% endif %}
+          </small>
+        </div>
+        {% endif %}
+      </div>
     </div>
-  {% endfor %}
-{%endblock %}  
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}  

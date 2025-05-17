@@ -1,28 +1,86 @@
 {% extends 'base.html' %}
 {% block content %}
-  <h2>My Listings</h2>
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>My Listings</h2>
+    <a href="{{ url_for('add_product') }}" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i> Add New Product
+    </a>
+  </div>
 
   {% if products %}
-    <ul>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
       {% for p in products %}
-        <li style="margin-bottom:1em;">
-          <h3>{{ p.name }}</h3>
-          <p>{{ p.description or '(No description)' }}</p>
-          <p><strong>Price:</strong> ${{ '%.2f'|format(p.price) }}</p>
-
-          <!-- now these endpoints exist: -->
-          <a href="{{ url_for('edit_product', product_id=p.id) }}">Edit</a>
-          |
-          <form action="{{ url_for('delete_product', product_id=p.id) }}"
-                method="POST"
-                style="display:inline;"
-                onsubmit="return confirm('Delete this listing?');">
-            <button type="submit">Delete</button>
-          </form>
-        </li>
+        <div class="col">
+          <div class="card h-100">
+            {% set primary_image = None %}
+            {% for image in p.images %}
+              {% if image.is_primary %}
+                {% set primary_image = image %}
+              {% endif %}
+            {% endfor %}
+            
+            <div class="product-image-container">
+              {% if p.images %}
+                {% set primary_image = None %}
+                {% for image in p.images %}
+                  {% if image.is_primary %}
+                    {% set primary_image = image %}
+                  {% endif %}
+                {% endfor %}
+                
+                {% if primary_image %}
+                  <img src="{{ url_for('static', filename='uploads/products/' + primary_image.filename) }}" 
+                       alt="{{ p.name }}" class="product-image">
+                {% else %}
+                  <img src="{{ url_for('static', filename='uploads/products/' + p.images[0].filename) }}" 
+                       alt="{{ p.name }}" class="product-image">
+                {% endif %}
+              {% else %}
+                <img src="{{ url_for('static', filename='img/product-placeholder.svg') }}" 
+                     alt="{{ p.name }}" class="product-image">
+              {% endif %}
+            </div>
+            
+            <div class="card-body">
+              <h5 class="card-title">{{ p.name }}</h5>
+              <p class="card-text">{{ p.description or '(No description)' }}</p>
+              <p class="card-text fw-bold">${{ '%.2f'|format(p.price) }}</p>
+              
+              {% if p.is_auction %}
+                <div class="badge bg-primary mb-2">
+                  <i class="bi bi-hammer"></i> Auction
+                  {% if p.time_left %}
+                    - Ends in {{ p.time_left.days }}d {{ (p.time_left.seconds // 3600) }}h
+                  {% endif %}
+                </div>
+              {% endif %}
+            </div>
+            
+            <div class="card-footer bg-white">
+              <div class="d-flex justify-content-between">
+                <a href="{{ url_for('edit_product', product_id=p.id) }}" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-pencil"></i> Edit
+                </a>
+                <form action="{{ url_for('delete_product', product_id=p.id) }}"
+                      method="POST"
+                      style="display:inline;"
+                      onsubmit="return confirm('Are you sure you want to delete this listing?');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash"></i> Delete
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
       {% endfor %}
-    </ul>
+    </div>
   {% else %}
-    <p>You haven’t listed any items yet.</p>
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i> You haven't listed any items yet.
+      <a href="{{ url_for('add_product') }}">Add your first product</a> to get started.
+    </div>
   {% endif %}
+</div>
 {% endblock %}

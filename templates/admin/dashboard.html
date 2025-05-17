@@ -1,0 +1,141 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Admin Dashboard{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Support Tickets</h5>
+                        <h2 class="mb-0">{{ open_tickets_count }}</h2>
+                    </div>
+                    <i class="bi bi-headset fs-1"></i>
+                </div>
+                <p class="card-text mt-2">Open tickets requiring attention</p>
+                <a href="{{ url_for('admin_support_tickets') }}" class="btn btn-light btn-sm mt-2">View All</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Users</h5>
+                        <h2 class="mb-0">{{ users_count }}</h2>
+                    </div>
+                    <i class="bi bi-people fs-1"></i>
+                </div>
+                <p class="card-text mt-2">Total registered users</p>
+                <a href="{{ url_for('admin_users') }}" class="btn btn-light btn-sm mt-2">Manage Users</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Products</h5>
+                        <h2 class="mb-0">{{ products_count }}</h2>
+                    </div>
+                    <i class="bi bi-box fs-1"></i>
+                </div>
+                <p class="card-text mt-2">Active listings & auctions</p>
+                <a href="{{ url_for('admin_products') }}" class="btn btn-light btn-sm mt-2">Manage Products</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Support Tickets</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Subject</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in recent_tickets %}
+                            <tr>
+                                <td>{{ ticket.id }}</td>
+                                <td>
+                                    <a href="{{ url_for('admin_view_ticket', ticket_id=ticket.id) }}">{{ ticket.subject }}</a>
+                                </td>
+                                <td>
+                                    {% if ticket.status == 'open' %}
+                                    <span class="badge bg-danger">Open</span>
+                                    {% elif ticket.status == 'in_progress' %}
+                                    <span class="badge bg-warning">In Progress</span>
+                                    {% elif ticket.status == 'resolved' %}
+                                    <span class="badge bg-success">Resolved</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Closed</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ ticket.created_at.strftime('%Y-%m-%d') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <a href="{{ url_for('admin_support_tickets') }}" class="btn btn-sm btn-primary">View All Tickets</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Users</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Registered</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in recent_users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td>
+                                    <a href="{{ url_for('admin_view_user', user_id=user.id) }}">{{ user.username }}</a>
+                                </td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.account_created.strftime('%Y-%m-%d') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <a href="{{ url_for('admin_users') }}" class="btn btn-sm btn-primary">View All Users</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

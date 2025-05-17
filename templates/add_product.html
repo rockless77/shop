@@ -1,16 +1,155 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<h2>Add a New Product</h2>
-<form method="POST">
-  <label>Name:</label>
-  <input type="text" name="name" required><br>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="h4 mb-0">Add a New Product</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="form-text">Be descriptive and specific about what you're selling.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                            <div class="form-text">Include details about condition, features, and any flaws.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Price ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="price" name="price" 
+                                       min="0.01" step="0.01" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="images" class="form-label">Product Images <span class="text-danger">*</span></label>
+                            <input class="form-control" type="file" id="images" name="images" multiple accept="image/*" required>
+                            <div class="form-text">
+                                <strong>Upload 3-12 images</strong> showing your product from different angles. 
+                                The first image will be the main photo shown in listings.
+                            </div>
+                            <div id="imagePreview" class="row mt-3 image-preview"></div>
+                            <div id="imageCounter" class="mt-2 small text-muted">0 images selected (minimum 3 required)</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" id="submitBtn" class="btn btn-primary" disabled>Add Product</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-  <label>Description:</label>
-  <textarea name="description" required></textarea><br>
+{% block scripts %}
+<script>
+// Client-side validation for images
+const imageInput = document.getElementById('images');
+const imagePreview = document.getElementById('imagePreview');
+const imageCounter = document.getElementById('imageCounter');
+const submitBtn = document.getElementById('submitBtn');
 
-  <label>Price:</label>
-  <input type="number" step="0.01" name="price" required><br>
+imageInput.addEventListener('change', function() {
+    // Clear previous previews
+    imagePreview.innerHTML = '';
+    
+    const files = this.files;
+    const count = files.length;
+    
+    // Update counter
+    imageCounter.textContent = count + ' images selected ' + 
+        (count < 3 ? '(minimum 3 required)' : count > 12 ? '(maximum 12 allowed)' : '');
+    
+    // Enable/disable submit button based on image count
+    submitBtn.disabled = (count < 3 || count > 12);
+    
+    // Generate previews (up to 12)
+    for (let i = 0; i < Math.min(count, 12); i++) {
+        const file = files[i];
+        
+        // Only process image files
+        if (!file.type.match('image.*')) continue;
+        
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const col = document.createElement('div');
+            col.className = 'col-4 col-md-3 mb-3';
+            
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'position-relative';
+            
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'img-thumbnail w-100';
+            img.style.height = '120px';
+            img.style.objectFit = 'cover';
+            
+            // Add primary badge to first image
+            if (i === 0) {
+                const badge = document.createElement('span');
+                badge.className = 'position-absolute top-0 start-0 badge bg-primary';
+                badge.textContent = 'Primary';
+                imgContainer.appendChild(badge);
+            }
+            
+            imgContainer.appendChild(img);
+            col.appendChild(imgContainer);
+            imagePreview.appendChild(col);
+        };
+        
+        reader.readAsDataURL(file);
+    }
+});
 
-  <button type="submit">Add Product</button>
-</form>
+// Form validation
+const form = document.querySelector('form');
+form.addEventListener('submit', (e) => {
+    const price = parseFloat(document.getElementById('price').value);
+    const files = imageInput.files;
+    
+    if (price <= 0) {
+        e.preventDefault();
+        alert('Price must be greater than 0');
+        return false;
+    }
+    
+    if (files.length < 3) {
+        e.preventDefault();
+        alert('Please upload at least 3 images');
+        return false;
+    }
+    
+    if (files.length > 12) {
+        e.preventDefault();
+        alert('You can upload a maximum of 12 images');
+        return false;
+    }
+    
+    return true;
+});
+</script>
+
+<style>
+.image-preview img {
+    transition: transform 0.2s;
+}
+.image-preview img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+</style>
 {% endblock %}

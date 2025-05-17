@@ -18,6 +18,26 @@ nav a, nav button {
     flex-wrap: wrap;
 }
 
+/* Square product image container */
+.product-image-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%; /* Creates a perfect square */
+    overflow: hidden;
+    background-color: #f8f9fa;
+}
+
+/* Image inside the square container */
+.product-image {
+    position: absolute;
+    max-width: 100%;
+    max-height: 100%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    object-fit: contain; /* Shows the entire image */
+}
+
 .product {
     border: 1px solid #ddd;
     margin: 10px;

@@ -1,0 +1,97 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}View Support Ticket #{{ ticket.id }}{% endblock %}
+
+{% block admin_content %}
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Ticket Information</h5>
+            <div>
+                {% if ticket.status == 'open' %}
+                <span class="badge bg-danger">Open</span>
+                {% elif ticket.status == 'in_progress' %}
+                <span class="badge bg-warning">In Progress</span>
+                {% elif ticket.status == 'resolved' %}
+                <span class="badge bg-success">Resolved</span>
+                {% else %}
+                <span class="badge bg-secondary">Closed</span>
+                {% endif %}
+                
+                {% if ticket.priority == 'low' %}
+                <span class="badge bg-success">Low Priority</span>
+                {% elif ticket.priority == 'medium' %}
+                <span class="badge bg-info">Medium Priority</span>
+                {% elif ticket.priority == 'high' %}
+                <span class="badge bg-warning">High Priority</span>
+                {% elif ticket.priority == 'critical' %}
+                <span class="badge bg-danger">Critical Priority</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <p><strong>Subject:</strong> {{ ticket.subject }}</p>
+                <p><strong>Created:</strong> {{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>Last Updated:</strong> {{ ticket.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>User:</strong> <a href="{{ url_for('admin_view_user', user_id=ticket.user_id) }}">{{ ticket.creator.username }}</a></p>
+                <p><strong>Email:</strong> {{ ticket.creator.email }}</p>
+                <p><strong>User ID:</strong> {{ ticket.user_id }}</p>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">Original Message</h6>
+            </div>
+            <div class="card-body">
+                <div class="ticket-message">
+                    {{ ticket.message|nl2br }}
+                </div>
+            </div>
+        </div>
+        
+        {% if ticket.status != 'closed' %}
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Reply to Ticket</h6>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin_reply_ticket', ticket_id=ticket.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Your Response</label>
+                        <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Update Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                            <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                            <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Closed</option>
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin_support_tickets') }}" class="btn btn-secondary">Back to Tickets</a>
+                        <button type="submit" class="btn btn-primary">Send Reply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-secondary">
+            <i class="bi bi-info-circle me-2"></i> This ticket is closed. No further replies can be added.
+            <form action="{{ url_for('admin_reopen_ticket', ticket_id=ticket.id) }}" method="POST" class="d-inline ms-3">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Reopen Ticket</button>
+            </form>
+        </div>
+        <div class="text-end">
+            <a href="{{ url_for('admin_support_tickets') }}" class="btn btn-secondary">Back to Tickets</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
